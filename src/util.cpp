@@ -97,7 +97,7 @@ float findVoronoiArea(Vertex& currentVertex,
         glm::vec3 a = vertices[triangle[1]].position - vertices[triangle[0]].position;
         glm::vec3 b = vertices[triangle[2]].position - vertices[triangle[0]].position;
 
-        A_i += glm::length(glm::cross(a, b)); 
+        A_i += (0.5 * glm::length(glm::cross(a, b))); 
     }
 
     return (1.0f / 3.0f) * A_i; 
