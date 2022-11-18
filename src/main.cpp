@@ -267,7 +267,7 @@ void printHelp()
 int main(int argc, char** argv)
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(800), OpenGLVersion::GL2 };
-    std::string fileName = "ref.obj";
+    std::string fileName = "sphere.obj";
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
     trackball.disableTranslation();
     printHelp();
@@ -290,7 +290,7 @@ int main(int argc, char** argv)
     RVInfo info {};
     info.volume = findVolume(rv.triangles, rv.vertices);
     info.surfaceArea = findSurfaceArea(rv.triangles, rv.vertices); 
-    info.curvature = findMeanCurvature(rv.triangles, rv.vertices); 
+    info.curvature = findCurvature(rv.triangles, rv.vertices, rv.vertexToTri); 
 
     window.registerCharCallback([&](unsigned unicodeCodePoint) {
         keyboard(static_cast<unsigned char>(unicodeCodePoint), state, window, trackball);

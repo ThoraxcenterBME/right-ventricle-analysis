@@ -40,6 +40,7 @@ struct Mesh {
 	// A triangle contains a triplet of values corresponding to the indices of the 3 vertices in the vertices array.
 	std::vector<glm::uvec3> triangles;
 	Material material;
+    std::map<int, std::vector<int>> vertexToTri;
 };
 
 [[nodiscard]] std::vector<Mesh> loadMesh(const std::filesystem::path& file, bool normalize = false);

@@ -87,7 +87,7 @@ Mesh loadMeshRV(std::istream& in) {
     // Set triangles, vertices, and the map 
     rv.triangles = triangles; 
     rv.vertices = vertices; 
-  //  rv.vertexToTriangle = vertexMap; 
+    rv.vertexToTri = vertexMap; 
 
     return rv; 
 }
