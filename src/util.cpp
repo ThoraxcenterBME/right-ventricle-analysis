@@ -29,7 +29,8 @@ float findVolume(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& vertic
 }
 
 
-float findSurfaceArea(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& vertices) {
+float findSurfaceArea(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& vertices) 
+{
     float sa = 0.0f; 
 
     for (int i = 0; i < triangles.size(); i++) {
@@ -47,7 +48,8 @@ float findSurfaceArea(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& v
 /*
 * Returns the unit normal vector to vector p. 
 */
-glm::vec3 findNormal(glm::vec3& p, glm::vec3& q, glm::vec3& r) {
+glm::vec3 findNormal(glm::vec3& p, glm::vec3& q, glm::vec3& r) 
+{
     glm::vec3 normalVector = glm::cross(q - p, r - p); 
 
     return glm::normalize(normalVector); 
@@ -84,8 +86,8 @@ bool alreadyContains(std::vector<int>& neighbours, int v_j)
 float findVoronoiArea(Vertex& currentVertex,
     std::vector<int>& triangleIndices,
     std::vector<glm::uvec3>& triangles,
-    std::vector<Vertex>& vertices) {
-
+    std::vector<Vertex>& vertices) 
+{
     float A_i = 0.0f; 
     glm::vec3 refPoint = currentVertex.position; 
     for (int i = 0; i < triangleIndices.size(); i++) {
@@ -131,7 +133,8 @@ std::vector<int> findAdjacentVertices(Vertex& currentVertex,
     int v_i,
     std::vector<int>& triangleIndices,
     std::vector<glm::uvec3>& triangles,
-    std::vector<Vertex>& vertices) {
+    std::vector<Vertex>& vertices) 
+{
     
     auto refPoint = currentVertex.position; 
     std::vector<glm::vec3> adjacentPoints = {}; 
@@ -162,7 +165,6 @@ std::pair<int, int> findSharedTriangles(int v_i, int v_j, std::map<int, std::vec
     auto tri_i = vertexToTri[v_i];
     auto tri_j = vertexToTri[v_j];
     std::vector<int> matchedTriangles = {};
-    int count = 0;
 
     for (int i = 0; i < tri_i.size(); i++) {
         int triangle_i = tri_i[i];
@@ -187,18 +189,20 @@ std::pair<int, int> findSharedTriangles(int v_i, int v_j, std::map<int, std::vec
 }
 
 
-float calculateCotangentWeights(int v_i, int v_j, std::map<int, std::vector<int>>& vertexToTri,
+float calculateCotangentWeights(int v_i, int v_j, 
+    std::map<int, std::vector<int>>& vertexToTri,
     std::vector<glm::uvec3>& triangles, std::vector<Vertex>& vertices)
 {
+    // Find two triangles both vertices are connected to 
     auto twoTriangles = findSharedTriangles(v_i, v_j, vertexToTri); 
-    
-    int v_q; 
+    glm::uvec3 triangle1 = triangles[twoTriangles.first];
+    glm::uvec3 triangle2 = triangles[twoTriangles.second]; 
+
+    // Find other two vertices 
+    int v_q;
     int v_k; 
 
     for (int z = 0; z < 3; z++) {
-        glm::uvec3 triangle1 = triangles[twoTriangles.first]; 
-        glm::uvec3 triangle2 = triangles[twoTriangles.second]; 
-
         if (triangle1[z] != v_i && triangle1[z] != v_j)
             v_q = triangle1[z]; 
         if (triangle2[z] != v_i && triangle2[z] != v_j)
@@ -212,25 +216,23 @@ float calculateCotangentWeights(int v_i, int v_j, std::map<int, std::vector<int>
         std::cout << "v_k: " << v_k << std::endl; 
     }*/ 
 
+    // Length of edge (v_i - v_j), stays the same
     float a = glm::distance(vertices[v_i].position, vertices[v_j].position); 
 
     // Calculate alpha_ij 
     float b = glm::distance(vertices[v_i].position, vertices[v_q].position); 
     float c = glm::distance(vertices[v_j].position, vertices[v_q].position);
     float area = 0.5f * glm::length(glm::cross(vertices[v_i].position - vertices[v_q].position, vertices[v_j].position - vertices[v_q].position)); 
-   // std::cout << "area: " << area << std::endl; 
     float alpha_ij = (b*b + c*c - a*a) / (4 * area); 
 
     // Calculate beta_ij 
     float b2 = glm::distance(vertices[v_i].position, vertices[v_k].position);
     float c2 = glm::distance(vertices[v_j].position, vertices[v_k].position);
     float area2 = 0.5f * glm::length(glm::cross(vertices[v_i].position - vertices[v_k].position, vertices[v_j].position - vertices[v_k].position));
-  //  std::cout << "area2: " << area << std::endl; 
     float beta_ij = (b2 * b2 + c2 * c2 - a * a) / (4 * area2);
 
     return alpha_ij + beta_ij; 
 }
-
 
 
 /*
@@ -241,7 +243,8 @@ float findMeanCurvature(Vertex& currentVertex, int vIndex,
     std::vector<glm::uvec3>& triangles, 
     std::vector<Vertex>& vertices,
     std::map<int, std::vector<int>>& vertexToTri, 
-    float A_i) {
+    float A_i) 
+{
 
     glm::vec3 laplaceP = glm::vec3(0.0f);  
     float meanCurvature = 0.0f; 
@@ -250,15 +253,17 @@ float findMeanCurvature(Vertex& currentVertex, int vIndex,
     auto triangleIndices = vertexToTri[vIndex]; 
 
     for (int i = 0; i < adjacentVertices.size(); i++) {
+        // Retrieve opposite vertex
         int v_j = adjacentVertices[i]; 
         Vertex vertex_j = vertices[v_j]; 
 
+        // (cot(alpha_ij) + cot(beta_ij)) * (v_j - v_i) 
         float cotangentWeights = calculateCotangentWeights(vIndex, v_j, vertexToTri, triangles, vertices); 
         laplaceP = laplaceP + cotangentWeights * (vertex_j.position - currentVertex.position); 
     }
 
     // Scale with Voronoi area  
-  //  laplaceP = (1 / (2.0f * A_i)) * laplaceP; 
+    laplaceP = (1 / (2.0f * A_i)) * laplaceP; 
     
     // Find the norm and divide it by 2
     meanCurvature = glm::length(laplaceP) / 2.0f;
@@ -266,27 +271,34 @@ float findMeanCurvature(Vertex& currentVertex, int vIndex,
     return meanCurvature; 
 }
 
-float findCurvature(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& vertices, std::map<int, std::vector<int>>& vertexToTri) {
+float findCurvature(std::vector<glm::uvec3>& triangles, 
+    std::vector<Vertex>& vertices, std::map<int, std::vector<int>>& vertexToTri) 
+{
     float curvature = 0.0f; 
     for (int i = 0; i < vertices.size(); i++) {
+        // Retrieve current vertex, adjancent vertices, and voronoi area 
         auto currentVertex = vertices[i]; 
         std::vector<int> adjacentPoints = findAdjacentVertices(currentVertex, i, vertexToTri[i], triangles, vertices); 
         float A_i = findVoronoiArea(currentVertex, vertexToTri[i], triangles, vertices); 
-        std::cout << "Voronoi Area: " << A_i << std::endl; 
+      
         // Find Gaussian curvature K_g and mean curvature H 
         float K_g = findGaussianCurvature(currentVertex, adjacentPoints, vertexToTri, vertices, A_i); 
         float H = findMeanCurvature(currentVertex, i, adjacentPoints, triangles, vertices, vertexToTri, A_i); 
-        std::cout << "K_g: " << K_g << std::endl; 
-        std::cout << "H: " << H << std::endl; 
-
+       
+        // Calculate principle curvatures k_1 and k_2 
         float k1 = H + sqrt(H * H - K_g); 
         float k2 = H - sqrt(H * H - K_g); 
 
+        // Debugging prints
+        std::cout << "Voronoi Area: " << A_i << std::endl; 
+        std::cout << "K_g: " << K_g << std::endl;
+        std::cout << "H: " << H << std::endl; 
         std::cout << "K1: " << k1 << std::endl;
         std::cout << "K2: " << k2 << std::endl; 
 
         curvature += (0.5 * (k1 + k2)); 
     }
+
     // Average the curvature 
     curvature /= vertices.size(); 
     
