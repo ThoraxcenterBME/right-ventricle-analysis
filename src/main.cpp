@@ -267,7 +267,7 @@ void printHelp()
 int main(int argc, char** argv)
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(800), OpenGLVersion::GL2 };
-    std::string fileName = "test.obj";
+    std::string fileName = "ref.obj";
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
     trackball.disableTranslation();
     printHelp();
@@ -277,7 +277,7 @@ int main(int argc, char** argv)
     ifile.open(std::filesystem::path(DATA_DIR) / fileName);
     Mesh rv = loadMeshRV(ifile);
 
-   ProgramState state {};
+    ProgramState state {};
     Mesh rv_graphical = loadMesh(argv[1] ? argv[1] : std::filesystem::path(DATA_DIR) / fileName, true)[0];
     state.myMesh = rv_graphical;
     state.materialInformation.Kd = glm::vec3(75, 139, 59) / 255.0f;
@@ -292,7 +292,7 @@ int main(int argc, char** argv)
     info.surfaceArea = findSurfaceArea(rv.triangles, rv.vertices); 
     info.curvature = findCurvature(rv.triangles, rv.vertices, rv.vertexToTri); 
 
-   window.registerCharCallback([&](unsigned unicodeCodePoint) {
+    window.registerCharCallback([&](unsigned unicodeCodePoint) {
         keyboard(static_cast<unsigned char>(unicodeCodePoint), state, window, trackball);
     });
 

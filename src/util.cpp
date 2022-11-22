@@ -104,19 +104,58 @@ double findVoronoiArea(Vertex& currentVertex,
     return (1.0 / 3.0) * A_i; 
 }
 
+// Assign the vertices of triangles, so that it isn't the same as the reference point
+void assignVertices(glm::uvec3& triangle, const int v_i, glm::vec3& a, 
+    glm::vec3& b, std::vector<Vertex>& vertices) 
+{
+    int* points = new int[2]; 
+    points[0] = -1; 
+    points[1] = -1; 
+
+    if (triangle[0] != v_i)
+        a = vertices[triangle[0]].position; 
+    if (triangle[1] != v_i && points[0] != -1)
+        b = vertices[triangle[1]].position;
+    else if (triangle[1] != v_i && points[0] == -1)
+        a = vertices[triangle[1]].position; 
+    if (triangle[2] != v_i && points[1] == -1)
+        b = vertices[triangle[2]].position; 
+}
+
 
 /*
 * Find the Gaussian curvature k_g at a vertex v. 
 */
-float findGaussianCurvature(Vertex& v, std::vector<int>& adjacentPoints,
+float findGaussianCurvature(Vertex& v, int v_i, std::vector<int>& adjacentPoints,
     std::map<int, std::vector<int>>& vertrexToTri, std::vector<Vertex>& vertices, 
-    float A_i)
+    std::vector<glm::uvec3>& triangles, float A_i)
 {
     glm::vec3 refPoint = v.position; 
+    std::vector<int> connectedTri = vertrexToTri[v_i]; 
     float sumAngle = 0.0f; 
 
-    for (int i = 0; i < adjacentPoints.size(); i++) {
-       
+    for (int i = 0; i < connectedTri.size(); i++) {
+        // The other two vertices of the same triangle 
+        glm::vec3 a; 
+        glm::vec3 b; 
+        glm::uvec3 tri = triangles[connectedTri[i]]; 
+
+        assignVertices(tri, v_i, a, b, vertices); 
+
+        glm::vec3 p = a - refPoint; 
+        glm::vec3 q = b - refPoint; 
+
+        // To prevent divisions by zero
+        if (glm::length(p) < EPS || glm::length(q) < EPS) {
+            std::cout << "Division by zero encountered in k_G" << std::endl; 
+            return 0.0; 
+        }
+
+        double input = glm::dot(p, q) / (glm::length(p) * glm::length(q)); 
+
+        double angle = glm::acos(input); 
+       // std::cout << "Angle found: " << glm::degrees(angle) << std::endl; 
+        sumAngle += angle; 
     }
 
     float num = (2.0f * M_PI) - sumAngle; 
@@ -282,7 +321,7 @@ double findCurvature(std::vector<glm::uvec3>& triangles,
         double A_i = findVoronoiArea(currentVertex, vertexToTri[i], triangles, vertices); 
       
         // Find Gaussian curvature K_g and mean curvature H 
-        double K_g = findGaussianCurvature(currentVertex, adjacentPoints, vertexToTri, vertices, A_i); 
+        double K_g = findGaussianCurvature(currentVertex, i, adjacentPoints, vertexToTri, vertices, triangles, A_i); 
         double H = findMeanCurvature(currentVertex, i, adjacentPoints, triangles, vertices, vertexToTri, A_i); 
        
         // Calculate principle curvatures k_1 and k_2 
@@ -290,9 +329,9 @@ double findCurvature(std::vector<glm::uvec3>& triangles,
         double k2 = H - sqrt(H * H - K_g); 
 
         // Debugging prints
-        std::cout << "Voronoi Area: " << A_i << std::endl; 
-        std::cout << "K_g: " << K_g << std::endl;
-        std::cout << "H: " << H << std::endl; 
+        // std::cout << "Voronoi Area: " << A_i << std::endl; 
+        //std::cout << "K_g: " << K_g << std::endl;
+       //std::cout << "H: " << H << std::endl; 
         std::cout << "K1: " << k1 << std::endl;
         std::cout << "K2: " << k2 << std::endl; 
 
