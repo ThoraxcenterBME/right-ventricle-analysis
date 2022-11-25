@@ -4,7 +4,7 @@
 #include <glm/gtx/vector_angle.hpp>
 #include <map>
 #include <math.h>
-constexpr auto EPS = 1e-8;
+constexpr auto EPS = 1e-6;
 constexpr auto M_PI = 3.14159265358979323846; 
 
 /*
@@ -158,6 +158,7 @@ float findGaussianCurvature(Vertex& v, int v_i, std::vector<int>& adjacentPoints
     }
 
     float num = (2.0f * M_PI) - sumAngle; 
+    std::cout << "Num is: " << num << std::endl; 
 
     return num / A_i; 
 }
@@ -285,7 +286,6 @@ double findMeanCurvature(Vertex& currentVertex, int vIndex,
     std::map<int, std::vector<int>>& vertexToTri, 
     float A_i) 
 {
-    std::cout << "at vertex: " << vIndex << std::endl; 
     glm::vec3 laplaceP = glm::vec3(0.0f);  
     double meanCurvature = 0.0; 
     
@@ -324,17 +324,21 @@ double findCurvature(std::vector<glm::uvec3>& triangles,
       
         // Find Gaussian curvature K_g and mean curvature H 
         double K_g = findGaussianCurvature(currentVertex, i, adjacentPoints, vertexToTri, vertices, triangles, A_i); 
-        std::cout << "prior to finding mean curv" << std::endl; 
         double H = findMeanCurvature(currentVertex, i, adjacentPoints, triangles, vertices, vertexToTri, A_i); 
+
+        // Correct for round-off errors 
+        K_g = K_g < EPS ? 0.0 : K_g; 
+        H = H < EPS ? 0.0 : H; 
        
         // Calculate principle curvatures k_1 and k_2 
         double k1 = H + sqrt(H * H - K_g); 
         double k2 = H - sqrt(H * H - K_g); 
 
         // Debugging prints
-        // std::cout << "Voronoi Area: " << A_i << std::endl; 
-        // std::cout << "K_g: " << K_g << std::endl;
-        // std::cout << "H: " << H << std::endl; 
+        std::cout << "At triangle: " << i << std::endl; 
+        std::cout << "Voronoi Area: " << A_i << std::endl; 
+        std::cout << "K_g: " << K_g << std::endl;
+        std::cout << "H: " << H << std::endl; 
         std::cout << "K1: " << k1 << std::endl;
         std::cout << "K2: " << k2 << std::endl; 
 
