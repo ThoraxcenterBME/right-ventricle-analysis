@@ -158,7 +158,6 @@ float findGaussianCurvature(Vertex& v, int v_i, std::vector<int>& adjacentPoints
     }
 
     float num = (2.0f * M_PI) - sumAngle; 
-    std::cout << "Num is: " << num << std::endl; 
 
     return num / A_i; 
 }
@@ -288,10 +287,7 @@ double findMeanCurvature(Vertex& currentVertex, int vIndex,
 {
     glm::vec3 laplaceP = glm::vec3(0.0f);  
     double meanCurvature = 0.0; 
-    
-    // Find the triangles this vertex is connected to 
-    auto triangleIndices = vertexToTri[vIndex]; 
-
+  
     for (int i = 0; i < adjacentVertices.size(); i++) {
         // Retrieve opposite vertex
         int v_j = adjacentVertices[i]; 
@@ -334,13 +330,17 @@ double findCurvature(std::vector<glm::uvec3>& triangles,
         double k1 = H + sqrt(H * H - K_g); 
         double k2 = H - sqrt(H * H - K_g); 
 
+        
+        k1 = isnan(k1) ? 0.0 : k1; 
+        k2 = isnan(k2) ? 0.0 : k2; 
+
         // Debugging prints
-        std::cout << "At triangle: " << i << std::endl; 
-        std::cout << "Voronoi Area: " << A_i << std::endl; 
-        std::cout << "K_g: " << K_g << std::endl;
-        std::cout << "H: " << H << std::endl; 
-        std::cout << "K1: " << k1 << std::endl;
-        std::cout << "K2: " << k2 << std::endl; 
+        //std::cout << "At triangle: " << i << std::endl; 
+        // std::cout << "Voronoi Area: " << A_i << std::endl; 
+        // std::cout << "K_g: " << K_g << std::endl;
+        // std::cout << "H: " << H << std::endl; 
+        // std::cout << "K1: " << k1 << std::endl;
+        // std::cout << "K2: " << k2 << std::endl; 
 
         curvature += (0.5 * (k1 + k2)); 
     }
