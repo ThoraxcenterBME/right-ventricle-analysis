@@ -24,7 +24,7 @@ double findVolume(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& verti
 
         volume += (1.0 / 6.0) * (-p3.position[0] * p2.position[1] * p1.position[2] + p2.position[0] * p3.position[1] * p1.position[2] + p3.position[0] * p1.position[1] * p2.position[2] - p1.position[0] * p3.position[1] * p2.position[2] - p2.position[0] * p1.position[1] * p3.position[2] + p1.position[0] * p2.position[1] * p3.position[2]);
     }
-
+    
     return abs(volume) / 1000.0;
 }
 
@@ -154,7 +154,6 @@ float findGaussianCurvature(Vertex& v, int v_i, std::vector<int>& adjacentPoints
         double input = glm::dot(p, q) / (glm::length(p) * glm::length(q)); 
 
         double angle = glm::acos(input); 
-       // std::cout << "Angle found: " << glm::degrees(angle) << std::endl; 
         sumAngle += angle; 
     }
 
@@ -173,9 +172,6 @@ std::vector<int> findAdjacentVertices(Vertex& currentVertex,
     std::vector<glm::uvec3>& triangles,
     std::vector<Vertex>& vertices) 
 {
-    
-    auto refPoint = currentVertex.position; 
-    std::vector<glm::vec3> adjacentPoints = {}; 
     std::vector<int> adjacentIndices = {}; 
 
     for (int i = 0; i < triangleIndices.size(); i++) {
@@ -220,6 +216,13 @@ std::pair<int, int> findSharedTriangles(int v_i, int v_j, std::map<int, std::vec
             break;
     }
 
+    // In case we are at an edge
+    if (matchedTriangles.size() < 2) {
+        pair.first = -1;
+        pair.second = -1;
+        return pair;
+    }
+
     pair.first = matchedTriangles[0];
     pair.second = matchedTriangles[1];
 
@@ -233,6 +236,12 @@ double calculateCotangentWeights(int v_i, int v_j,
 {
     // Find two triangles both vertices are connected to 
     auto twoTriangles = findSharedTriangles(v_i, v_j, vertexToTri); 
+
+    // At an edge, so we return 
+    if (twoTriangles.first == -1) {
+        return 0.0; 
+    }
+
     glm::uvec3 triangle1 = triangles[twoTriangles.first];
     glm::uvec3 triangle2 = triangles[twoTriangles.second]; 
 
@@ -246,13 +255,6 @@ double calculateCotangentWeights(int v_i, int v_j,
         if (triangle2[z] != v_i && triangle2[z] != v_j)
             v_k = triangle2[z]; 
     }
-
-    /* if (v_i == 3) {
-        std::cout << "v_i: " << v_i << std::endl; 
-        std::cout << "v_j: " << v_j << std::endl; 
-        std::cout << "v_q: " << v_q << std::endl; 
-        std::cout << "v_k: " << v_k << std::endl; 
-    }*/ 
 
     // Length of edge (v_i - v_j), stays the same
     double a = glm::distance(vertices[v_i].position, vertices[v_j].position); 
@@ -283,7 +285,7 @@ double findMeanCurvature(Vertex& currentVertex, int vIndex,
     std::map<int, std::vector<int>>& vertexToTri, 
     float A_i) 
 {
-
+    std::cout << "at vertex: " << vIndex << std::endl; 
     glm::vec3 laplaceP = glm::vec3(0.0f);  
     double meanCurvature = 0.0; 
     
@@ -305,7 +307,7 @@ double findMeanCurvature(Vertex& currentVertex, int vIndex,
     laplaceP = (1 / (2.0f * A_i)) * laplaceP; 
     
     // Find the norm and divide it by 2
-    meanCurvature = glm::length(laplaceP) / 2.0f;
+    meanCurvature = glm::length(laplaceP) / 2.0;
 
     return meanCurvature; 
 }
@@ -322,6 +324,7 @@ double findCurvature(std::vector<glm::uvec3>& triangles,
       
         // Find Gaussian curvature K_g and mean curvature H 
         double K_g = findGaussianCurvature(currentVertex, i, adjacentPoints, vertexToTri, vertices, triangles, A_i); 
+        std::cout << "prior to finding mean curv" << std::endl; 
         double H = findMeanCurvature(currentVertex, i, adjacentPoints, triangles, vertices, vertexToTri, A_i); 
        
         // Calculate principle curvatures k_1 and k_2 
@@ -330,8 +333,8 @@ double findCurvature(std::vector<glm::uvec3>& triangles,
 
         // Debugging prints
         // std::cout << "Voronoi Area: " << A_i << std::endl; 
-        //std::cout << "K_g: " << K_g << std::endl;
-       //std::cout << "H: " << H << std::endl; 
+        // std::cout << "K_g: " << K_g << std::endl;
+        // std::cout << "H: " << H << std::endl; 
         std::cout << "K1: " << k1 << std::endl;
         std::cout << "K2: " << k2 << std::endl; 
 

@@ -5,22 +5,6 @@
 #include <map>
 #include <sstream>
 #include <glm/gtx/normal.hpp>
-//struct Mesh {
-//    // Vertices contain the vertex positions and normals of the mesh.
-//    std::vector<Vertex> vertices;
-//    // A triangle contains a triplet of values corresponding to the indices of the 3 vertices in the vertices array.
-//    std::vector<glm::uvec3> triangles;
-//
-//    Material material;
-//};
-
-//struct Vertex {
-//    glm::vec3 position;
-//    glm::vec3 normal;
-//    glm::vec2 texCoord; // Texture coordinate
-//
-//    [[nodiscard]] constexpr bool operator==(const Vertex&) const noexcept = default;
-//};
 
 void setVertexPosition(Vertex& v, float x, float y, float z) {
     glm::vec3 pos = glm::vec3(x, y, z); 
