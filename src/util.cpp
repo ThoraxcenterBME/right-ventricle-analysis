@@ -7,6 +7,8 @@
 constexpr auto EPS = 1e-6;
 constexpr auto M_PI = 3.14159265358979323846; 
 
+// TODO: make ring around current vertex, clockwise order
+
 /*
  * Used the source: http://chenlab.ece.cornell.edu/Publication/Cha/icip01_Cha.pdf
  * to find the volume of a 3D mesh.
@@ -25,7 +27,7 @@ double findVolume(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& verti
         volume += (1.0 / 6.0) * (-p3.position[0] * p2.position[1] * p1.position[2] + p2.position[0] * p3.position[1] * p1.position[2] + p3.position[0] * p1.position[1] * p2.position[2] - p1.position[0] * p3.position[1] * p2.position[2] - p2.position[0] * p1.position[1] * p3.position[2] + p1.position[0] * p2.position[1] * p3.position[2]);
     }
     
-    return abs(volume) / 1000.0;
+    return abs(volume) / 1000;
 }
 
 
@@ -108,18 +110,24 @@ double findVoronoiArea(Vertex& currentVertex,
 void assignVertices(glm::uvec3& triangle, const int v_i, glm::vec3& a, 
     glm::vec3& b, std::vector<Vertex>& vertices) 
 {
-    int* points = new int[2]; 
-    points[0] = -1; 
-    points[1] = -1; 
+    bool setA = false; 
+    bool setB = false; 
 
-    if (triangle[0] != v_i)
-        a = vertices[triangle[0]].position; 
-    if (triangle[1] != v_i && points[0] != -1)
+    if (triangle[0] != v_i) {
+        a = vertices[triangle[0]].position;
+        setA = true; 
+    }
+    if (triangle[1] != v_i && setA) {
         b = vertices[triangle[1]].position;
-    else if (triangle[1] != v_i && points[0] == -1)
+        setB = true; 
+    } else if (triangle[1] != v_i && !setA) {
         a = vertices[triangle[1]].position; 
-    if (triangle[2] != v_i && points[1] == -1)
-        b = vertices[triangle[2]].position; 
+        setA = true; 
+    }
+    if (triangle[2] != v_i && !setB) {
+        b = vertices[triangle[2]].position;
+        setB = true; 
+    }
 }
 
 
@@ -271,6 +279,8 @@ double calculateCotangentWeights(int v_i, int v_j,
     double area2 = 0.5f * glm::length(glm::cross(vertices[v_i].position - vertices[v_k].position, vertices[v_j].position - vertices[v_k].position));
     double beta_ij = (b2 * b2 + c2 * c2 - a * a) / (4 * area2);
 
+
+    std::cout << "alpha: " << alpha_ij << " beta: " << beta_ij << std::endl;  
     return alpha_ij + beta_ij; 
 }
 
@@ -316,6 +326,7 @@ double findCurvature(std::vector<glm::uvec3>& triangles,
         // Retrieve current vertex, adjancent vertices, and voronoi area 
         auto currentVertex = vertices[i]; 
         std::vector<int> adjacentPoints = findAdjacentVertices(currentVertex, i, vertexToTri[i], triangles, vertices); 
+        std::cout << "Number of triangles: " << adjacentPoints.size() << std::endl; 
         double A_i = findVoronoiArea(currentVertex, vertexToTri[i], triangles, vertices); 
       
         // Find Gaussian curvature K_g and mean curvature H 
@@ -331,16 +342,16 @@ double findCurvature(std::vector<glm::uvec3>& triangles,
         double k2 = H - sqrt(H * H - K_g); 
 
         
-        k1 = isnan(k1) ? 0.0 : k1; 
-        k2 = isnan(k2) ? 0.0 : k2; 
+    //    k1 = isnan(k1) ? 0.0 : k1; 
+      //  k2 = isnan(k2) ? 0.0 : k2; 
 
         // Debugging prints
-        //std::cout << "At triangle: " << i << std::endl; 
-        // std::cout << "Voronoi Area: " << A_i << std::endl; 
-        // std::cout << "K_g: " << K_g << std::endl;
-        // std::cout << "H: " << H << std::endl; 
-        // std::cout << "K1: " << k1 << std::endl;
-        // std::cout << "K2: " << k2 << std::endl; 
+        // std::cout << "At triangle: " << i << std::endl; 
+        std::cout << "Voronoi Area: " << A_i << std::endl; 
+        std::cout << "K_g: " << K_g << std::endl;
+        std::cout << "H: " << H << std::endl; 
+        std::cout << "K1: " << k1 << std::endl;
+        std::cout << "K2: " << k2 << std::endl; 
 
         curvature += (0.5 * (k1 + k2)); 
     }
