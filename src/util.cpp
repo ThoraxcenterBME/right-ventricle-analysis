@@ -8,13 +8,12 @@
 constexpr auto EPS = 1e-6;
 constexpr auto M_PI = 3.14159265358979323846; 
 
-// TODO: make ring around current vertex, clockwise order
-
 /*
  * Used the source: http://chenlab.ece.cornell.edu/Publication/Cha/icip01_Cha.pdf
  * to find the volume of a 3D mesh.
  */
-double findVolume(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& vertices)
+double findVolume(std::vector<glm::uvec3>& triangles, 
+    std::vector<Vertex>& vertices)
 {
     double volume = 0.0;
 
@@ -31,8 +30,11 @@ double findVolume(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& verti
     return abs(volume) / 1000;
 }
 
-
-double findSurfaceArea(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& vertices) 
+/*
+* Calculates surface area of the mesh 
+*/
+double findSurfaceArea(std::vector<glm::uvec3>& triangles, 
+    std::vector<Vertex>& vertices) 
 {
     double sa = 0.0; 
 
@@ -51,7 +53,9 @@ double findSurfaceArea(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& 
 /*
 * Returns the unit normal vector to vector p. 
 */
-glm::vec3 findNormal(glm::vec3& p, glm::vec3& q, glm::vec3& r) 
+glm::vec3 findNormal(glm::vec3& p, 
+    glm::vec3& q, 
+    glm::vec3& r) 
 {
     glm::vec3 normalVector = glm::cross(q - p, r - p); 
 
@@ -59,7 +63,9 @@ glm::vec3 findNormal(glm::vec3& p, glm::vec3& q, glm::vec3& r)
 }
 
 // Deprecated: Currently not in use 
-float curvatureTriangle(glm::vec3& p1, glm::vec3& p2, glm::vec3& p3)
+float curvatureTriangle(glm::vec3& p1, 
+    glm::vec3& p2, 
+    glm::vec3& p3)
 {
     glm::vec3 n1 = findNormal(p1, p2, p3); 
     glm::vec3 n2 = findNormal(p2, p1, p3); 
@@ -76,6 +82,7 @@ float curvatureTriangle(glm::vec3& p1, glm::vec3& p2, glm::vec3& p3)
 
     return (1.0f / 3.0f) * (c1 + c2 + c3); 
 }
+
 /*
 * Finds Voronoi Area, simple 1/3 of the area of the surrounding neighbouring triangles
 */
@@ -102,7 +109,9 @@ double findVoronoiArea(Vertex& currentVertex,
 /*
 * Find the Gaussian curvature k_g at a vertex v. 
 */
-float findGaussianCurvature(Vertex& currentVertex, std::vector<Vertex>& vertices, float A_i)
+float findGaussianCurvature(Vertex& currentVertex, 
+    std::vector<Vertex>& vertices, 
+    float A_i)
 {
     int ringSize = currentVertex.ring.size();
     double sumTheta = 0; 
@@ -160,8 +169,15 @@ double findMeanCurvature(Vertex& currentVertex,
     return (1.0 / (4 * A_i)) * glm::length(laPlace); 
 }
 
+/*
+* Calculates the global curvature of a mesh
+* Sources:
+*   1) http://rodolphe-vaillant.fr/entry/33/curvature-of-a-triangle-mesh-definition-and-computation
+*   2) http://www.geometry.caltech.edu/pubs/DMSB_III.pdf
+*/
 double findCurvature(std::vector<glm::uvec3>& triangles, 
-    std::vector<Vertex>& vertices, std::map<int, std::vector<int>>& vertexToTri) 
+    std::vector<Vertex>& vertices, 
+    std::map<int, std::vector<int>>& vertexToTri) 
 {
     double curvature = 0.0; 
     for (int i = 0; i < vertices.size(); i++) {
