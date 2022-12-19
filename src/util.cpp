@@ -1,19 +1,19 @@
 #include <framework/mesh.h>
 #include <iostream>
 #include <glm/glm.hpp>
+#include <glm/gtc/reciprocal.hpp>
 #include <glm/gtx/vector_angle.hpp>
 #include <map>
 #include <math.h>
 constexpr auto EPS = 1e-6;
 constexpr auto M_PI = 3.14159265358979323846; 
 
-// TODO: make ring around current vertex, clockwise order
-
 /*
  * Used the source: http://chenlab.ece.cornell.edu/Publication/Cha/icip01_Cha.pdf
  * to find the volume of a 3D mesh.
  */
-double findVolume(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& vertices)
+double findVolume(std::vector<glm::uvec3>& triangles, 
+    std::vector<Vertex>& vertices)
 {
     double volume = 0.0;
 
@@ -30,8 +30,11 @@ double findVolume(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& verti
     return abs(volume) / 1000;
 }
 
-
-double findSurfaceArea(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& vertices) 
+/*
+* Calculates surface area of the mesh 
+*/
+double findSurfaceArea(std::vector<glm::uvec3>& triangles, 
+    std::vector<Vertex>& vertices) 
 {
     double sa = 0.0; 
 
@@ -50,7 +53,9 @@ double findSurfaceArea(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& 
 /*
 * Returns the unit normal vector to vector p. 
 */
-glm::vec3 findNormal(glm::vec3& p, glm::vec3& q, glm::vec3& r) 
+glm::vec3 findNormal(glm::vec3& p, 
+    glm::vec3& q, 
+    glm::vec3& r) 
 {
     glm::vec3 normalVector = glm::cross(q - p, r - p); 
 
@@ -58,7 +63,9 @@ glm::vec3 findNormal(glm::vec3& p, glm::vec3& q, glm::vec3& r)
 }
 
 // Deprecated: Currently not in use 
-float curvatureTriangle(glm::vec3& p1, glm::vec3& p2, glm::vec3& p3)
+float curvatureTriangle(glm::vec3& p1, 
+    glm::vec3& p2, 
+    glm::vec3& p3)
 {
     glm::vec3 n1 = findNormal(p1, p2, p3); 
     glm::vec3 n2 = findNormal(p2, p1, p3); 
@@ -76,16 +83,9 @@ float curvatureTriangle(glm::vec3& p1, glm::vec3& p2, glm::vec3& p3)
     return (1.0f / 3.0f) * (c1 + c2 + c3); 
 }
 
-bool alreadyContains(std::vector<int>& neighbours, int v_j)
-{
-    for (auto i : neighbours) {
-        if (v_j == i)
-            return true; 
-    }
-    return false;
-}
-
-
+/*
+* Finds Voronoi Area, simple 1/3 of the area of the surrounding neighbouring triangles
+*/
 double findVoronoiArea(Vertex& currentVertex,
     std::vector<int>& triangleIndices,
     std::vector<glm::uvec3>& triangles,
@@ -106,252 +106,104 @@ double findVoronoiArea(Vertex& currentVertex,
     return (1.0 / 3.0) * A_i; 
 }
 
-// Assign the vertices of triangles, so that it isn't the same as the reference point
-void assignVertices(glm::uvec3& triangle, const int v_i, glm::vec3& a, 
-    glm::vec3& b, std::vector<Vertex>& vertices) 
-{
-    bool setA = false; 
-    bool setB = false; 
-
-    if (triangle[0] != v_i) {
-        a = vertices[triangle[0]].position;
-        setA = true; 
-    }
-    if (triangle[1] != v_i && setA) {
-        b = vertices[triangle[1]].position;
-        setB = true; 
-    } else if (triangle[1] != v_i && !setA) {
-        a = vertices[triangle[1]].position; 
-        setA = true; 
-    }
-    if (triangle[2] != v_i && !setB) {
-        b = vertices[triangle[2]].position;
-        setB = true; 
-    }
-}
-
-
 /*
 * Find the Gaussian curvature k_g at a vertex v. 
 */
-float findGaussianCurvature(Vertex& v, int v_i, std::vector<int>& adjacentPoints,
-    std::map<int, std::vector<int>>& vertrexToTri, std::vector<Vertex>& vertices, 
-    std::vector<glm::uvec3>& triangles, float A_i)
+float findGaussianCurvature(Vertex& currentVertex, 
+    std::vector<Vertex>& vertices, 
+    float A_i)
 {
-    glm::vec3 refPoint = v.position; 
-    std::vector<int> connectedTri = vertrexToTri[v_i]; 
-    float sumAngle = 0.0f; 
+    int ringSize = currentVertex.ring.size();
+    double sumTheta = 0; 
 
-    for (int i = 0; i < connectedTri.size(); i++) {
-        // The other two vertices of the same triangle 
-        glm::vec3 a; 
-        glm::vec3 b; 
-        glm::uvec3 tri = triangles[connectedTri[i]]; 
-
-        assignVertices(tri, v_i, a, b, vertices); 
-
-        glm::vec3 p = a - refPoint; 
-        glm::vec3 q = b - refPoint; 
-
-        // To prevent divisions by zero
-        if (glm::length(p) < EPS || glm::length(q) < EPS) {
-            std::cout << "Division by zero encountered in k_G" << std::endl; 
-            return 0.0; 
-        }
-
-        double input = glm::dot(p, q) / (glm::length(p) * glm::length(q)); 
-
-        double angle = glm::acos(input); 
-        sumAngle += angle; 
+    for (int k = 0; k < ringSize; k++) {
+        // Get opposite vertex
+        Vertex j = vertices[currentVertex.ring[k]];
+        // Get next vertex
+        Vertex p = vertices[currentVertex.ring[(k + 1) % ringSize]];
+        
+        // Find theta_j
+        glm::vec3 ji = j.position - currentVertex.position; 
+        glm::vec3 pi = p.position - currentVertex.position; 
+       
+        // Find radians and add the theta value
+        double input = glm::dot(ji, pi) / (glm::length(ji) * glm::length(pi)); 
+        sumTheta += glm::acos(input);
     }
 
-    float num = (2.0f * M_PI) - sumAngle; 
-
-    return num / A_i; 
+    return (2 * M_PI - sumTheta) / A_i; 
 }
-
-
-/*
-* Given a vertex, returns all points connected to it. 
-*/
-std::vector<int> findAdjacentVertices(Vertex& currentVertex,
-    int v_i,
-    std::vector<int>& triangleIndices,
-    std::vector<glm::uvec3>& triangles,
-    std::vector<Vertex>& vertices) 
-{
-    std::vector<int> adjacentIndices = {}; 
-
-    for (int i = 0; i < triangleIndices.size(); i++) {
-        // Find triangle vertex is connected to. 
-        glm::uvec3 triangle = triangles[triangleIndices[i]];
-
-        // Only add the vertex, if it isn't equal to current vertex and we didn't add it yet. 
-        if (triangle[0] != v_i && !alreadyContains(adjacentIndices, triangle[0]))
-            adjacentIndices.push_back(triangle[0]); 
-        if (triangle[1] != v_i && !alreadyContains(adjacentIndices, triangle[1]))
-            adjacentIndices.push_back(triangle[1]); 
-        if (triangle[2] != v_i && !alreadyContains(adjacentIndices, triangle[2]))
-             adjacentIndices.push_back(triangle[2]); 
-    }
-
-    return adjacentIndices; 
-}
-
-/*
- * Find the _two_ triangles vertex i and j are connected to
- */
-std::pair<int, int> findSharedTriangles(int v_i, int v_j, std::map<int, std::vector<int>>& vertexToTri)
-{
-    std::pair<int, int> pair;
-    auto tri_i = vertexToTri[v_i];
-    auto tri_j = vertexToTri[v_j];
-    std::vector<int> matchedTriangles = {};
-
-    for (int i = 0; i < tri_i.size(); i++) {
-        int triangle_i = tri_i[i];
-        for (int j = 0; j < tri_j.size(); j++) {
-            int triangle_j = tri_j[j];
-
-            // If found one triangle, move to next one
-            if (triangle_i == triangle_j) {
-                matchedTriangles.push_back(triangle_i);
-                break;
-            }
-        }
-        // If two triangles found, move on
-        if (matchedTriangles.size() > 1)
-            break;
-    }
-
-    // In case we are at an edge
-    if (matchedTriangles.size() < 2) {
-        pair.first = -1;
-        pair.second = -1;
-        return pair;
-    }
-
-    pair.first = matchedTriangles[0];
-    pair.second = matchedTriangles[1];
-
-    return pair;
-}
-
-
-double calculateCotangentWeights(int v_i, int v_j, 
-    std::map<int, std::vector<int>>& vertexToTri,
-    std::vector<glm::uvec3>& triangles, std::vector<Vertex>& vertices)
-{
-    // Find two triangles both vertices are connected to 
-    auto twoTriangles = findSharedTriangles(v_i, v_j, vertexToTri); 
-
-    // At an edge, so we return 
-    if (twoTriangles.first == -1) {
-        return 0.0; 
-    }
-
-    glm::uvec3 triangle1 = triangles[twoTriangles.first];
-    glm::uvec3 triangle2 = triangles[twoTriangles.second]; 
-
-    // Find other two vertices 
-    int v_q;
-    int v_k; 
-
-    for (int z = 0; z < 3; z++) {
-        if (triangle1[z] != v_i && triangle1[z] != v_j)
-            v_q = triangle1[z]; 
-        if (triangle2[z] != v_i && triangle2[z] != v_j)
-            v_k = triangle2[z]; 
-    }
-
-    // Length of edge (v_i - v_j), stays the same
-    double a = glm::distance(vertices[v_i].position, vertices[v_j].position); 
-
-    // Calculate alpha_ij 
-    double b = glm::distance(vertices[v_i].position, vertices[v_q].position); 
-    double c = glm::distance(vertices[v_j].position, vertices[v_q].position);
-    double area = 0.5f * glm::length(glm::cross(vertices[v_i].position - vertices[v_q].position, vertices[v_j].position - vertices[v_q].position)); 
-    double alpha_ij = (b*b + c*c - a*a) / (4 * area); 
-
-    // Calculate beta_ij 
-    double b2 = glm::distance(vertices[v_i].position, vertices[v_k].position);
-    double c2 = glm::distance(vertices[v_j].position, vertices[v_k].position);
-    double area2 = 0.5f * glm::length(glm::cross(vertices[v_i].position - vertices[v_k].position, vertices[v_j].position - vertices[v_k].position));
-    double beta_ij = (b2 * b2 + c2 * c2 - a * a) / (4 * area2);
-
-
-    std::cout << "alpha: " << alpha_ij << " beta: " << beta_ij << std::endl;  
-    return alpha_ij + beta_ij; 
-}
-
 
 /*
 * This finds the mean curvature at a vertex v - H
  */
-double findMeanCurvature(Vertex& currentVertex, int vIndex, 
-    std::vector<int>& adjacentVertices,
-    std::vector<glm::uvec3>& triangles, 
+double findMeanCurvature(Vertex& currentVertex, 
     std::vector<Vertex>& vertices,
-    std::map<int, std::vector<int>>& vertexToTri, 
     float A_i) 
 {
-    glm::vec3 laplaceP = glm::vec3(0.0f);  
-    double meanCurvature = 0.0; 
-  
-    for (int i = 0; i < adjacentVertices.size(); i++) {
-        // Retrieve opposite vertex
-        int v_j = adjacentVertices[i]; 
-        Vertex vertex_j = vertices[v_j]; 
+    int ringSize = currentVertex.ring.size();
+    glm::vec3 laPlace = glm::vec3(0.0); 
 
-        // (cot(alpha_ij) + cot(beta_ij)) * (v_j - v_i) 
-        float cotangentWeights = calculateCotangentWeights(vIndex, v_j, vertexToTri, triangles, vertices); 
-        laplaceP = laplaceP + cotangentWeights * (vertex_j.position - currentVertex.position); 
+    for (int k = 0; k < ringSize; k++) {
+        // Get opposite vertex 
+        Vertex j = vertices[currentVertex.ring[k]]; 
+        // Get next vertex 
+        Vertex p = vertices[currentVertex.ring[(k + 1) % ringSize]];
+        // Get previous vertex 
+        Vertex q = k == 0 ? vertices[currentVertex.ring[ringSize - 1]] : vertices[currentVertex.ring[(k - 1)]]; 
+
+        // Find cot(alpha)
+        glm::vec3 ip = currentVertex.position - p.position; 
+        glm::vec3 jp = j.position - p.position; 
+        double alpha = glm::dot(ip, jp) / (glm::length(ip) * glm::length(jp)); 
+
+        // Find cot(beta)
+        glm::vec3 iq = currentVertex.position - q.position;
+        glm::vec3 jq = j.position - q.position; 
+        double beta = glm::dot(iq, jq) / (glm::length(iq) * glm::length(jq)); 
+
+        laPlace += (float)(glm::cot(alpha) + glm::cot(beta)) * (j.position - currentVertex.position);
+
     }
 
-    // Scale with Voronoi area  
-    // Doubles cannot be used to scale glm::vec3 
-    laplaceP = (1 / (2.0f * A_i)) * laplaceP; 
-    
-    // Find the norm and divide it by 2
-    meanCurvature = glm::length(laplaceP) / 2.0;
-
-    return meanCurvature; 
+    return (1.0 / (4 * A_i)) * glm::length(laPlace); 
 }
 
+/*
+* Calculates the global curvature of a mesh
+* Sources:
+*   1) http://rodolphe-vaillant.fr/entry/33/curvature-of-a-triangle-mesh-definition-and-computation
+*   2) http://www.geometry.caltech.edu/pubs/DMSB_III.pdf
+*/
 double findCurvature(std::vector<glm::uvec3>& triangles, 
-    std::vector<Vertex>& vertices, std::map<int, std::vector<int>>& vertexToTri) 
+    std::vector<Vertex>& vertices, 
+    std::map<int, std::vector<int>>& vertexToTri) 
 {
     double curvature = 0.0; 
     for (int i = 0; i < vertices.size(); i++) {
-        // Retrieve current vertex, adjancent vertices, and voronoi area 
+        // Retrieve current vertex and voronoi area 
         auto currentVertex = vertices[i]; 
-        std::vector<int> adjacentPoints = findAdjacentVertices(currentVertex, i, vertexToTri[i], triangles, vertices); 
-        std::cout << "Number of triangles: " << adjacentPoints.size() << std::endl; 
         double A_i = findVoronoiArea(currentVertex, vertexToTri[i], triangles, vertices); 
       
         // Find Gaussian curvature K_g and mean curvature H 
-        double K_g = findGaussianCurvature(currentVertex, i, adjacentPoints, vertexToTri, vertices, triangles, A_i); 
-        double H = findMeanCurvature(currentVertex, i, adjacentPoints, triangles, vertices, vertexToTri, A_i); 
-
+        double K_g = findGaussianCurvature(currentVertex, vertices, A_i); 
+        double H = findMeanCurvature(currentVertex, vertices, A_i); 
+     
         // Correct for round-off errors 
-        K_g = K_g < EPS ? 0.0 : K_g; 
-        H = H < EPS ? 0.0 : H; 
+        K_g = K_g < EPS && K_g > 0 ? 0.0 : K_g; 
+        H = H < EPS && H > 0 ? 0.0 : H; 
        
         // Calculate principle curvatures k_1 and k_2 
         double k1 = H + sqrt(H * H - K_g); 
-        double k2 = H - sqrt(H * H - K_g); 
+        double k2 = H - sqrt(H * H - K_g);
 
-        
-    //    k1 = isnan(k1) ? 0.0 : k1; 
-      //  k2 = isnan(k2) ? 0.0 : k2; 
-
-        // Debugging prints
-        // std::cout << "At triangle: " << i << std::endl; 
+        // Print for debugging 
+      /* std::cout << "Number of triangles: " << currentVertex.ring.size() << std::endl; 
         std::cout << "Voronoi Area: " << A_i << std::endl; 
         std::cout << "K_g: " << K_g << std::endl;
         std::cout << "H: " << H << std::endl; 
         std::cout << "K1: " << k1 << std::endl;
-        std::cout << "K2: " << k2 << std::endl; 
+        std::cout << "K2: " << k2 << std::endl; */
 
         curvature += (0.5 * (k1 + k2)); 
     }
