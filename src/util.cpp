@@ -198,12 +198,12 @@ double findCurvature(std::vector<glm::uvec3>& triangles,
         double k2 = H - sqrt(H * H - K_g);
 
         // Print for debugging 
-        std::cout << "Number of triangles: " << currentVertex.ring.size() << std::endl; 
+      /* std::cout << "Number of triangles: " << currentVertex.ring.size() << std::endl; 
         std::cout << "Voronoi Area: " << A_i << std::endl; 
         std::cout << "K_g: " << K_g << std::endl;
         std::cout << "H: " << H << std::endl; 
         std::cout << "K1: " << k1 << std::endl;
-        std::cout << "K2: " << k2 << std::endl; 
+        std::cout << "K2: " << k2 << std::endl; */
 
         curvature += (0.5 * (k1 + k2)); 
     }

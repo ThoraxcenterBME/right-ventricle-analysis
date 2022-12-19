@@ -105,7 +105,8 @@ void initializeRings(std::map<int, std::vector<int>>& vertexMap,
 }
 
 // Function for printing vertex map
-void printVertexMap(std::map<int, std::vector<int>>& vmap) {
+void printVertexMap(std::map<int, std::vector<int>>& vmap) 
+{
 
     for (int i = 0; i < vmap.size(); i++) {
         std::cout << "Vertex: " << i << std::endl; 
@@ -113,6 +114,43 @@ void printVertexMap(std::map<int, std::vector<int>>& vmap) {
             std::cout << "triangle: " << vmap[i][j] << std::endl; 
         }
     }
+}
+
+
+// Function for printing vertex map
+void printVertexRing(std::vector<Vertex>& vertices)
+{
+
+    for (int i = 0; i < vertices.size(); i++) {
+        std::cout << vertices[i].ring.size() << " " << std::flush;
+        for (int j = 0; j < vertices[i].ring.size(); j++) {
+            std::cout << vertices[i].ring[j] << " " << std::flush;
+        }
+        std::cout << "" << std::endl;
+    }
+}
+
+// Load the ring from a file
+void loadRingFromFile(std::string& name, std::vector<Vertex>& vertices) {
+    std::string line;
+    std::ifstream myfile;
+    myfile.open(std::filesystem::path(DATA_DIR) / name);
+    int vIndex = 0; 
+ 
+    while (std::getline(myfile, line)) {
+        std::istringstream lines(line);
+        
+        int neighbourCount; 
+        lines >> neighbourCount;
+
+        for (int i = 0; i < neighbourCount; i++) {
+            int nn; 
+            lines >> nn; 
+            vertices[vIndex].ring.push_back(nn); 
+        }
+        vIndex++; 
+    }
+
 }
 
 Mesh loadMeshRV(std::istream& in) {
@@ -170,9 +208,7 @@ Mesh loadMeshRV(std::istream& in) {
     rv.triangles = triangles; 
     rv.vertices = vertices; 
     rv.vertexToTri = vertexMap; 
-    // printVertexMap(vertexMap); 
-    // Initialise the ring 
-    initializeRings(rv.vertexToTri, rv.vertices, rv.triangles); 
+   
     return rv; 
 }
 
