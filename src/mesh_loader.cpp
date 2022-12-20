@@ -152,6 +152,16 @@ void loadRingFromFile(std::string& name, std::vector<Vertex>& vertices) {
 
 }
 
+double largestDist(std::vector<Vertex>& vertices) {
+    float dist = -10000; 
+    for (int i = 0; i < vertices.size(); i++) {
+        for (int j = 0; j < vertices.size(); j++) {
+            dist = std::max(dist, glm::length(vertices[i].position - vertices[j].position)); 
+        }
+    }
+    return dist; 
+}
+
 Mesh loadMeshRV(std::istream& in) {
     Mesh rv = {}; 
     std::vector<Vertex> vertices = {}; 
@@ -160,6 +170,8 @@ Mesh loadMeshRV(std::istream& in) {
     int vertexKey = 0; 
     int triangleIndex = 0; 
     std::string linebuf;
+    double minCoordinate = 10000; 
+    double maxCoordinate = -10000; 
    
     while (std::getline(in, linebuf)) { 
         std::istringstream lines(linebuf);
@@ -208,8 +220,10 @@ Mesh loadMeshRV(std::istream& in) {
     rv.vertices = vertices; 
     rv.vertexToTri = vertexMap; 
 
+    std::cout << "Radius is approximately: " << largestDist(rv.vertices) / 2.0 << std::endl; 
+
     // Printing the rings or need them for the first time
-    // initializeRings(rv.vertexToTri, rv.vertices, rv.triangles); 
+    initializeRings(rv.vertexToTri, rv.vertices, rv.triangles); 
     // printVertexRing(rv.vertices); 
     
     return rv; 

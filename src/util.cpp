@@ -190,22 +190,24 @@ double findCurvature(std::vector<glm::uvec3>& triangles,
         double H = findMeanCurvature(currentVertex, vertices, A_i); 
      
         // Correct for round-off errors 
-        K_g = K_g < EPS && K_g > 0 ? 0.0 : K_g; 
-        H = H < EPS && H > 0 ? 0.0 : H; 
+        K_g = std::abs(K_g) < EPS ? 0.0 : K_g; 
+        H = std::abs(H) < EPS ? 0.0 : H; 
        
         // Calculate principle curvatures k_1 and k_2 
         double k1 = H + sqrt(H * H - K_g); 
         double k2 = H - sqrt(H * H - K_g);
 
         // Print for debugging 
-      /* std::cout << "Number of triangles: " << currentVertex.ring.size() << std::endl; 
+        std::cout << "Number of triangles: " << currentVertex.ring.size() << std::endl; 
         std::cout << "Voronoi Area: " << A_i << std::endl; 
         std::cout << "K_g: " << K_g << std::endl;
         std::cout << "H: " << H << std::endl; 
         std::cout << "K1: " << k1 << std::endl;
-        std::cout << "K2: " << k2 << std::endl; */ 
+        std::cout << "K2: " << k2 << std::endl;
 
         double vertexCurvature = (0.5 * (k1 + k2));  
+
+        std::cout << "Curvature " << i << ": " << vertexCurvature << std::endl; 
         currentVertex.setCurvature(vertexCurvature); 
         curvature += vertexCurvature; 
     }
