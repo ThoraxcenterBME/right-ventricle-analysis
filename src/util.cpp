@@ -182,7 +182,7 @@ double findCurvature(std::vector<glm::uvec3>& triangles,
     double curvature = 0.0; 
     for (int i = 0; i < vertices.size(); i++) {
         // Retrieve current vertex and voronoi area 
-        auto currentVertex = vertices[i]; 
+        Vertex& currentVertex = vertices[i]; 
         double A_i = findVoronoiArea(currentVertex, vertexToTri[i], triangles, vertices); 
       
         // Find Gaussian curvature K_g and mean curvature H 
@@ -203,13 +203,78 @@ double findCurvature(std::vector<glm::uvec3>& triangles,
         std::cout << "K_g: " << K_g << std::endl;
         std::cout << "H: " << H << std::endl; 
         std::cout << "K1: " << k1 << std::endl;
-        std::cout << "K2: " << k2 << std::endl; */
+        std::cout << "K2: " << k2 << std::endl; */ 
 
-        curvature += (0.5 * (k1 + k2)); 
+        double vertexCurvature = (0.5 * (k1 + k2));  
+        currentVertex.setCurvature(vertexCurvature); 
+        curvature += vertexCurvature; 
     }
 
     // Average the curvature 
     curvature /= vertices.size(); 
     
     return curvature; 
+}
+
+// Calculates the heat color at a particular vertex using the curvature value
+glm::vec3 heatColorCalculation(const Vertex& vertex, double min, double max) {
+    // Uniform curvature
+    if (max - min < 1e-6)
+        return glm::vec3(0.0f, 1.0f, 1.0f); 
+
+    glm::vec3 c = glm::vec3(0.0f); 
+    float scaledCurvature = (vertex.curvature - min) / (max - min); 
+
+    if (scaledCurvature < 0.25) {
+        scaledCurvature *= 4.0;
+        c = glm::vec3(0.0, scaledCurvature, 1.0f);
+    } else if (scaledCurvature < 0.50) {
+        scaledCurvature = (scaledCurvature - 0.25f) * 4.0f;
+        c = glm::vec3(0.0f, 1.0f, 1.0f - scaledCurvature);
+    } else if (scaledCurvature < 0.75) {
+        scaledCurvature = (scaledCurvature - 0.5f) * 4.0f;
+        c = glm::vec3(scaledCurvature, 1.0f, 0.0f);
+    } else {
+        scaledCurvature = (scaledCurvature - 0.75f) * 4.0f;
+        c = glm::vec3(1.0f, 1.0f - scaledCurvature, 0.0f);
+    }
+
+    return c; 
+}
+
+std::pair<double, double> findMinMax(std::vector<Vertex>& vertices) {
+    double min = 100000; 
+    double max = -100000; 
+
+    for (auto v : vertices) {
+        min = std::min(v.curvature, min); 
+        max = std::max(v.curvature, max); 
+    }
+
+    std::pair<double, double> minMax = {};
+    minMax.first = min; 
+    minMax.second = max; 
+
+    return minMax;
+}
+
+// Determines the heatcolors for the mesh
+std::vector<glm::vec3> heatColor(std::vector<glm::uvec3>& triangles,
+    std::vector<Vertex>& vertices,
+    std::map<int, std::vector<int>>& vertexToTri)
+{
+    std::vector<glm::vec3> colors = {};
+    std::pair<double, double> minMax = findMinMax(vertices);
+
+    for (auto v : vertices) {
+        colors.push_back(heatColorCalculation(v, minMax.first, minMax.second));
+    }
+
+    return colors; 
+}
+
+void scale(std::vector<Vertex>& vertices) {
+    for (Vertex& v : vertices) {
+        v.position = 0.01f * v.position; 
+    }
 }

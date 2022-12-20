@@ -18,7 +18,10 @@ struct Vertex {
 	glm::vec2 texCoord; // Texture coordinate
     std::vector<int> ring; // Saves the vertices that make the 1-ring neighbourhood
 	int ringCount; 
-
+	double curvature; 
+	void setCurvature(double c) {
+            curvature = c; 
+	}
 	[[nodiscard]] constexpr bool operator==(const Vertex&) const noexcept = default;
 };
 
