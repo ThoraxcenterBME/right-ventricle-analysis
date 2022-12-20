@@ -155,7 +155,7 @@ static std::optional<glm::vec3> getWorldPositionOfPixel(const Window& window, co
     return glm::unProject(win, view, projection, viewport);
 }
 
-void draw(const ProgramState& state, const Trackball& camera, std::span<const glm::vec3> vertexColors)
+void draw(const ProgramState& state, const Trackball& camera, std::vector<glm::vec3> vertexColors)
 {
     glClearColor(state.backgroundColor.r, state.backgroundColor.g, state.backgroundColor.b, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -248,27 +248,15 @@ void printHelp()
     std::cout << "SPACE - replaces mouse click for selection, will then call your light placement function" << std::endl;
 }
 
-//int main(int arcs, char** argv) 
-//{
-//    std::string fileName = "test_rv.obj"; 
-//    std::ifstream ifile;
-//    ifile.open(std::filesystem::path(DATA_DIR) / fileName);     
-//    Mesh rv = loadMeshRV(ifile);
-//
-//    float volume = findVolume(rv.triangles, rv.vertices);
-//    std::cout << "Volume is: " << volume << std::endl; 
-// 
-//
-//}
-
 /*
 * This main function would be to plot the RV beutel 
 */
 int main(int argc, char** argv)
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(800), OpenGLVersion::GL2 };
-    std::string fileName = "ref.obj";
-    std::string ring = "ring-indices.txt"; 
+    std::string fileName = "sphere.obj";
+    std::string ring = "ring-sphere.txt"; // ring-indices, ring-sphere
+    bool scaleNeeded = false; 
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
     trackball.disableTranslation();
     printHelp();
@@ -283,18 +271,33 @@ int main(int argc, char** argv)
     
     ProgramState state {};
     Mesh rv_graphical = loadMesh(argv[1] ? argv[1] : std::filesystem::path(DATA_DIR) / fileName, true)[0];
-    state.myMesh = rv_graphical;
+    state.myMesh = rv;
+    if (scaleNeeded) {
+        scale(state.myMesh.vertices); 
+    }   
+    
     state.materialInformation.Kd = glm::vec3(75, 139, 59) / 255.0f;
     state.materialInformation.Ks = glm::vec3(221, 42, 116) / 255.0f;
     state.materialInformation.shininess = 20.0f;
     meshFlipZ(state.myMesh);
-    state.lights.push_back(Light { glm::vec3(-0.55f, 0.6f, -1.25f), glm::vec3(224, 215, 73) / 255.0f });
+    float lp  = .85f; 
+    state.lights.push_back(Light { glm::vec3(lp, lp, lp), glm::vec3(224, 215, 73) / 255.0f });
+    state.lights.push_back(Light { glm::vec3(-lp, lp, lp), glm::vec3(224, 215, 73) / 255.0f });
+    state.lights.push_back(Light { glm::vec3(lp, -lp, lp), glm::vec3(224, 215, 73) / 255.0f });
+    state.lights.push_back(Light { glm::vec3(lp, lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
+    state.lights.push_back(Light { glm::vec3(-lp, -lp, lp), glm::vec3(224, 215, 73) / 255.0f });
+    state.lights.push_back(Light { glm::vec3(lp, -lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
+    state.lights.push_back(Light { glm::vec3(-lp, lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
+    state.lights.push_back(Light { glm::vec3(-lp, -lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
     
     // Calculate the actual volume captured by mesh
     RVInfo info {};
     info.volume = findVolume(rv.triangles, rv.vertices);
     info.surfaceArea = findSurfaceArea(rv.triangles, rv.vertices); 
     info.curvature = findCurvature(rv.triangles, rv.vertices, rv.vertexToTri); 
+
+    // Display heat colours
+    std::vector<glm::vec3> vertexColors = heatColor(rv.triangles, rv.vertices, rv.vertexToTri); 
 
     window.registerCharCallback([&](unsigned unicodeCodePoint) {
         keyboard(static_cast<unsigned char>(unicodeCodePoint), state, window, trackball);
@@ -304,8 +307,8 @@ int main(int argc, char** argv)
         window.updateInput();
         glViewport(0, 0, window.getFrameBufferSize().x, window.getFrameBufferSize().y);
 
-        std::vector<glm::vec3> vertexColors(state.myMesh.vertices.size());
-        computeLighting(state, trackball.position(), vertexColors);
+        std::vector<glm::vec3> lightColors(state.myMesh.vertices.size());
+        computeLighting(state, trackball.position(), lightColors);
 
         draw(state, trackball, vertexColors);
         drawUI(state, trackball, info);

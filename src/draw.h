@@ -7,4 +7,4 @@ DISABLE_WARNINGS_POP()
 #include <framework/mesh.h>
 #include <span>
 
-void drawMeshWithColors(const Mesh& mesh, std::span<const glm::vec3> colors);
+void drawMeshWithColors(const Mesh& mesh, std::vector<glm::vec3> colors);

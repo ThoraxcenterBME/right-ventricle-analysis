@@ -7,7 +7,7 @@ DISABLE_WARNINGS_POP()
 #include <framework/window.h>
 
 // TODO: Make this work with colours for different curvature 
-void drawMeshWithColors(const Mesh& mesh, std::span<const glm::vec3> colors)
+void drawMeshWithColors(const Mesh& mesh, std::vector<glm::vec3> colors)
 {
     glBegin(GL_TRIANGLES);
     for (const auto& triangle : mesh.triangles) {
