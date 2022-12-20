@@ -116,7 +116,6 @@ void printVertexMap(std::map<int, std::vector<int>>& vmap)
     }
 }
 
-
 // Function for printing vertex map
 void printVertexRing(std::vector<Vertex>& vertices)
 {
@@ -208,7 +207,11 @@ Mesh loadMeshRV(std::istream& in) {
     rv.triangles = triangles; 
     rv.vertices = vertices; 
     rv.vertexToTri = vertexMap; 
-   
+
+    // Printing the rings or need them for the first time
+    // initializeRings(rv.vertexToTri, rv.vertices, rv.triangles); 
+    // printVertexRing(rv.vertices); 
+    
     return rv; 
 }
 

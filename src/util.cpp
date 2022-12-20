@@ -218,12 +218,12 @@ double findCurvature(std::vector<glm::uvec3>& triangles,
 
 // Calculates the heat color at a particular vertex using the curvature value
 glm::vec3 heatColorCalculation(const Vertex& vertex, double min, double max) {
-    glm::vec3 red = glm::vec3(1.0f, 0.0f, 0.0f); 
-    glm::vec3 blue = glm::vec3(0.0f, 0.0f, 1.0f); 
-    glm::vec3 c = glm::vec3(0.0f); 
-    double curvature = vertex.curvature; 
+    // Uniform curvature
+    if (max - min < 1e-6)
+        return glm::vec3(0.0f, 1.0f, 1.0f); 
 
-    float scaledCurvature = (curvature - min) / (max - min); 
+    glm::vec3 c = glm::vec3(0.0f); 
+    float scaledCurvature = (vertex.curvature - min) / (max - min); 
 
     if (scaledCurvature < 0.25) {
         scaledCurvature *= 4.0;
