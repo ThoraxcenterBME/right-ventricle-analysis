@@ -5,10 +5,10 @@
 #include <glm/gtx/vector_angle.hpp>
 #include <map>
 #include <math.h>
-constexpr auto EPS = 1e-6;
+constexpr auto EPS = 1e-7;
 constexpr auto M_PI = 3.14159265358979323846; 
-
-/*
+constexpr auto conversion = 57.295779; 
+    /*
  * Used the source: http://chenlab.ece.cornell.edu/Publication/Cha/icip01_Cha.pdf
  * to find the volume of a 3D mesh.
  */
@@ -155,14 +155,26 @@ double findMeanCurvature(Vertex& currentVertex,
         // Find cot(alpha)
         glm::vec3 ip = currentVertex.position - p.position; 
         glm::vec3 jp = j.position - p.position; 
-        double alpha = glm::dot(ip, jp) / (glm::length(ip) * glm::length(jp)); 
+        double alpha = glm::acos(glm::dot(ip, jp) / (glm::length(ip) * glm::length(jp))); 
+        double alphaWeight = glm::dot(ip, jp) / glm::length(glm::cross(ip,jp)); 
 
         // Find cot(beta)
         glm::vec3 iq = currentVertex.position - q.position;
         glm::vec3 jq = j.position - q.position; 
-        double beta = glm::dot(iq, jq) / (glm::length(iq) * glm::length(jq)); 
+        double beta = glm::acos(glm::dot(iq, jq) / (glm::length(iq) * glm::length(jq))); 
+        double betaWeight = glm::dot(iq, jq) / glm::length(glm::cross(iq, jq)); 
 
-        laPlace += (float)(glm::cot(alpha) + glm::cot(beta)) * (j.position - currentVertex.position);
+        
+        glm::vec3 check = j.position - currentVertex.position; 
+        laPlace += (float)(alphaWeight + betaWeight) * (j.position - currentVertex.position);
+      
+        //center tri
+         if (ringSize == 6) {
+            std::cout << "angles: " << alpha*conversion << " " << beta*conversion << std::endl; 
+            std::cout << "weights: " << glm::cot(alpha) + glm::cot(beta) << std::endl; 
+            std::cout << "another weights: " << alphaWeight + betaWeight << std::endl; 
+            std::cout << "vector: " << check.x << " " << check.y << " " << check.z << std::endl; 
+        } 
 
     }
 

@@ -223,7 +223,7 @@ Mesh loadMeshRV(std::istream& in) {
     std::cout << "Radius is approximately: " << largestDist(rv.vertices) / 2.0 << std::endl; 
 
     // Printing the rings or need them for the first time
-    initializeRings(rv.vertexToTri, rv.vertices, rv.triangles); 
+    // initializeRings(rv.vertexToTri, rv.vertices, rv.triangles); 
     // printVertexRing(rv.vertices); 
     
     return rv; 
