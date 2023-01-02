@@ -263,8 +263,8 @@ void printHelp()
 int main(int argc, char** argv)
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(800), OpenGLVersion::GL2 };
-    std::string fileName = "sphere.obj";
-    std::string ring = "ring-sphere.txt"; // ring-indices, ring-sphere ring-large
+    std::string fileName = "large-sphere.obj";
+    std::string ring = "ring-large.txt"; // ring-indices, ring-sphere ring-large
     bool scaleNeeded = false;
 
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
@@ -299,13 +299,13 @@ int main(int argc, char** argv)
     
     // Calculate the actual volume captured by mesh
     RVInfo info {};
-    info.volume = findVolume(rv.triangles, rv.vertices);
-    info.surfaceArea = findSurfaceArea(rv.triangles, rv.vertices); 
-    info.curvature = findCurvature(rv.triangles, rv.vertices, rv.vertexToTri);
+    info.volume = find_volume(rv.triangles, rv.vertices);
+    info.surfaceArea = find_surface_area(rv.triangles, rv.vertices); 
+    info.curvature = find_curvature(rv.triangles, rv.vertices, rv.vertexToTri);
     info.radius = rv.radius; 
 
     // Display heat colours
-    std::vector<glm::vec3> vertexColors = heatColor(rv.triangles, rv.vertices, rv.vertexToTri); 
+    std::vector<glm::vec3> vertexColors = heat_color(rv.triangles, rv.vertices, rv.vertexToTri); 
 
     window.registerCharCallback([&](unsigned unicodeCodePoint) {
         keyboard(static_cast<unsigned char>(unicodeCodePoint), state, window, trackball);
