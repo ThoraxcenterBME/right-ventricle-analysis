@@ -109,7 +109,6 @@ double find_voronoi_area(Vertex& currentVertex,
         }
     }
     return  A_i; 
-
 }
 
 /*
@@ -161,16 +160,13 @@ double find_mean_curvature(Vertex& currentVertex,
         // Find cot(alpha)
         glm::vec3 p_i = currentVertex.position - p.position; 
         glm::vec3 p_j = j.position - p.position; 
-        double alpha = glm::acos(glm::dot(p_i, p_j) / (glm::length(p_i) * glm::length(p_j))); 
         double alphaWeight = glm::dot(p_i, p_j) / glm::length(glm::cross(p_i,p_j)); 
 
         // Find cot(beta)
         glm::vec3 q_i = currentVertex.position - q.position;
         glm::vec3 q_j = j.position - q.position;
-        double beta = glm::acos(glm::dot(q_i, q_j) / (glm::length(q_i) * glm::length(q_j))); 
         double betaWeight = glm::dot(q_i, q_j) / glm::length(glm::cross(q_i, q_j)); 
 
-        glm::vec3 check = j.position - currentVertex.position; 
         laPlace += (float)(alphaWeight + betaWeight) * (currentVertex.position - j.position);
     }
 
@@ -197,19 +193,17 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
         double A_i = find_voronoi_area(currentVertex, vertices); 
         double K_g = find_gaussian_curvature(currentVertex, vertices, A_i); 
         double H = find_mean_curvature(currentVertex, vertices, A_i); 
-       
      
         // Correct for round-off errors 
         K_g = std::abs(K_g) < EPS ? 0.0 : K_g; 
         H = std::abs(H) < EPS ? 0.0 : H; 
            
-        // Calculate principle curvatures k_1 and k_2 
+        // Calculate principle curvatures k_1 and k_2 (+ apply thresholding)
         double k1 = H + sqrt(std::max(0.0, H * H - K_g)); 
         double k2 = H - sqrt(std::max(0.0, H * H - K_g));
 
         // Print for debugging 
-        /* std::cout << "Number of triangles: " << currentVertex.ring.size() << std::endl; 
-        std::cout << "Voronoi Area: " << A_i << std::endl; 
+        /* std::cout << "Voronoi Area: " << A_i << std::endl; 
         std::cout << "K_g: " << K_g << std::endl;
         std::cout << "H: " << H << std::endl; 
         std::cout << "K1: " << k1 << std::endl;
