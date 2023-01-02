@@ -69,6 +69,7 @@ struct RVInfo {
     float volume;
     float surfaceArea; 
     float curvature; 
+    float radius; 
 };
 
 glm::vec3 computeLighting(const ProgramState& programState, unsigned vertexIndex, const glm::vec3& cameraPos, const Light& light)
@@ -233,10 +234,18 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info)
     ImGui::Spacing();
     ImGui::Separator();
 
+    // Display Radius 
+    std::string radString = "Radius: " + std::to_string(info.radius);
+    ImGui::Text(radString.c_str());
+    ImGui::Spacing();
+    ImGui::Separator();
+
+    // Display Curvature
     std::string curveString = "Curvature: " + std::to_string(info.curvature);
     ImGui::Text(curveString.c_str());
     ImGui::Spacing();
     ImGui::Separator();
+
 
     // Display other information ...
     ImGui::End();
@@ -254,9 +263,10 @@ void printHelp()
 int main(int argc, char** argv)
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(800), OpenGLVersion::GL2 };
-    std::string fileName = "ref.obj";
-    std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere
-    bool scaleNeeded = true; 
+    std::string fileName = "large-sphere.obj";
+    std::string ring = "ring-large.txt"; // ring-indices, ring-sphere ring-large
+    bool scaleNeeded = false;
+
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
     trackball.disableTranslation();
     printHelp();
@@ -272,9 +282,6 @@ int main(int argc, char** argv)
     ProgramState state {};
     Mesh rv_graphical = loadMesh(argv[1] ? argv[1] : std::filesystem::path(DATA_DIR) / fileName, true)[0];
     state.myMesh = rv;
-    if (scaleNeeded) {
-        scale(state.myMesh.vertices); 
-    }   
     
     state.materialInformation.Kd = glm::vec3(75, 139, 59) / 255.0f;
     state.materialInformation.Ks = glm::vec3(221, 42, 116) / 255.0f;
@@ -292,16 +299,21 @@ int main(int argc, char** argv)
     
     // Calculate the actual volume captured by mesh
     RVInfo info {};
-    info.volume = findVolume(rv.triangles, rv.vertices);
-    info.surfaceArea = findSurfaceArea(rv.triangles, rv.vertices); 
-    info.curvature = findCurvature(rv.triangles, rv.vertices, rv.vertexToTri); 
+    info.volume = find_volume(rv.triangles, rv.vertices);
+    info.surfaceArea = find_surface_area(rv.triangles, rv.vertices); 
+    info.curvature = find_curvature(rv.triangles, rv.vertices, rv.vertexToTri);
+    info.radius = rv.radius; 
 
     // Display heat colours
-    std::vector<glm::vec3> vertexColors = heatColor(rv.triangles, rv.vertices, rv.vertexToTri); 
+    std::vector<glm::vec3> vertexColors = heat_color(rv.triangles, rv.vertices, rv.vertexToTri); 
 
     window.registerCharCallback([&](unsigned unicodeCodePoint) {
         keyboard(static_cast<unsigned char>(unicodeCodePoint), state, window, trackball);
     });
+
+    if (scaleNeeded) {
+        scale(state.myMesh.vertices);
+    }   
 
     while (!window.shouldClose()) {
         window.updateInput();
