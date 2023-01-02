@@ -19,6 +19,7 @@ struct Vertex {
     std::vector<int> ring; // Saves the vertices that make the 1-ring neighbourhood
 	int ringCount; 
 	double curvature; 
+	int index; 
 	void setCurvature(double c) {
             curvature = c; 
 	}
@@ -46,6 +47,7 @@ struct Mesh {
 	std::vector<glm::uvec3> triangles;
 	Material material;
     std::map<int, std::vector<int>> vertexToTri;
+    double radius; 
 };
 
 [[nodiscard]] std::vector<Mesh> loadMesh(const std::filesystem::path& file, bool normalize = false);

@@ -185,7 +185,7 @@ Mesh loadMeshRV(std::istream& in) {
             lines >> x >> y >> z;
             Vertex v = {}; 
             setVertexPosition(v, x, y, z); 
-
+             v.index = vertexKey; 
             // Add vertex to list of vertices
             vertices.push_back(v); 
             // Add an empty list entry to the map 
@@ -219,8 +219,7 @@ Mesh loadMeshRV(std::istream& in) {
     rv.triangles = triangles; 
     rv.vertices = vertices; 
     rv.vertexToTri = vertexMap; 
-
-    std::cout << "Radius is approximately: " << largestDist(rv.vertices) / 2.0 << std::endl; 
+    rv.radius = largestDist(rv.vertices) / 2.0; 
 
     // Printing the rings or need them for the first time
     // initializeRings(rv.vertexToTri, rv.vertices, rv.triangles); 

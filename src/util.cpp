@@ -87,23 +87,34 @@ float curvatureTriangle(glm::vec3& p1,
 * Finds Voronoi Area, simple 1/3 of the area of the surrounding neighbouring triangles
 */
 double findVoronoiArea(Vertex& currentVertex,
-    std::vector<int>& triangleIndices,
-    std::vector<glm::uvec3>& triangles,
     std::vector<Vertex>& vertices) 
 {
-    double A_i = 0.0; 
-    glm::vec3 refPoint = currentVertex.position; 
-    for (int i = 0; i < triangleIndices.size(); i++) {
-        // Find triangle vertex is connected to.
-        glm::uvec3 triangle = triangles[triangleIndices[i]];
+    int ringSize = currentVertex.ring.size();
+    double A_i = 0; 
 
-        glm::vec3 a = vertices[triangle[1]].position - vertices[triangle[0]].position;
-        glm::vec3 b = vertices[triangle[2]].position - vertices[triangle[0]].position;
+    for (int k = 0; k < ringSize; k++) {
+        // Get opposite vertex
+        Vertex j = vertices[currentVertex.ring[k]];
+        // Get next vertex
+        Vertex p = vertices[currentVertex.ring[(k + 1) % ringSize]];
+        // Get previous vertex
+        Vertex q = k == 0 ? vertices[currentVertex.ring[ringSize - 1]] : vertices[currentVertex.ring[(k - 1)]];
 
-        A_i += (0.5 * glm::length(glm::cross(a, b))); 
+        // Find cot(alpha)
+        glm::vec3 p_i = currentVertex.position - p.position;
+        glm::vec3 p_j = j.position - p.position;
+        double alphaWeight = glm::dot(p_i, p_j) / glm::length(glm::cross(p_i, p_j));
+
+        // Find cot(beta)
+        glm::vec3 q_i = currentVertex.position - q.position;
+        glm::vec3 q_j = j.position - q.position;
+        double betaWeight = glm::dot(q_i, q_j) / glm::length(glm::cross(q_i, q_j));
+        double norm = glm::length(currentVertex.position - j.position); 
+        A_i += (alphaWeight + betaWeight) * (norm * norm); 
+      
     }
+    return 0.125 * A_i; 
 
-    return (1.0 / 3.0) * A_i; 
 }
 
 /*
@@ -152,29 +163,34 @@ double findMeanCurvature(Vertex& currentVertex,
         // Get previous vertex 
         Vertex q = k == 0 ? vertices[currentVertex.ring[ringSize - 1]] : vertices[currentVertex.ring[(k - 1)]]; 
 
+        // Check if iterations of the ring is correct, only check for one vertex 
+        /* if (currentVertex.index == 37) {
+            std::cout << "Current vertex j: " << j.index << std::endl; 
+            std::cout << "Forward vertex j + 1: " << p.index << std::endl; 
+            std::cout << "Backward vertex j - 1: " << q.index << std::endl; 
+        }*/ 
+
         // Find cot(alpha)
-        glm::vec3 ip = currentVertex.position - p.position; 
-        glm::vec3 jp = j.position - p.position; 
-        double alpha = glm::acos(glm::dot(ip, jp) / (glm::length(ip) * glm::length(jp))); 
-        double alphaWeight = glm::dot(ip, jp) / glm::length(glm::cross(ip,jp)); 
+        glm::vec3 p_i = currentVertex.position - p.position; 
+        glm::vec3 p_j = j.position - p.position; 
+        double alpha = glm::acos(glm::dot(p_i, p_j) / (glm::length(p_i) * glm::length(p_j))); 
+        double alphaWeight = glm::dot(p_i, p_j) / glm::length(glm::cross(p_i,p_j)); 
 
         // Find cot(beta)
-        glm::vec3 iq = currentVertex.position - q.position;
-        glm::vec3 jq = j.position - q.position; 
-        double beta = glm::acos(glm::dot(iq, jq) / (glm::length(iq) * glm::length(jq))); 
-        double betaWeight = glm::dot(iq, jq) / glm::length(glm::cross(iq, jq)); 
+        glm::vec3 q_i = currentVertex.position - q.position;
+        glm::vec3 q_j = j.position - q.position;
+        double beta = glm::acos(glm::dot(q_i, q_j) / (glm::length(q_i) * glm::length(q_j))); 
+        double betaWeight = glm::dot(q_i, q_j) / glm::length(glm::cross(q_i, q_j)); 
 
-        
         glm::vec3 check = j.position - currentVertex.position; 
-        laPlace += (float)(alphaWeight + betaWeight) * (j.position - currentVertex.position);
+        laPlace += (float)(alphaWeight + betaWeight) * (currentVertex.position - j.position);
       
-        //center tri
-         if (ringSize == 6) {
+        // Some information
+        /* if (ringSize == 6 && currentVertex.index == 37) {
             std::cout << "angles: " << alpha*conversion << " " << beta*conversion << std::endl; 
-            std::cout << "weights: " << glm::cot(alpha) + glm::cot(beta) << std::endl; 
-            std::cout << "another weights: " << alphaWeight + betaWeight << std::endl; 
+            std::cout << "weights (summed): " << glm::cot(alpha) + glm::cot(beta) << std::endl; 
             std::cout << "vector: " << check.x << " " << check.y << " " << check.z << std::endl; 
-        } 
+        } */ 
 
     }
 
@@ -195,31 +211,35 @@ double findCurvature(std::vector<glm::uvec3>& triangles,
     for (int i = 0; i < vertices.size(); i++) {
         // Retrieve current vertex and voronoi area 
         Vertex& currentVertex = vertices[i]; 
-        double A_i = findVoronoiArea(currentVertex, vertexToTri[i], triangles, vertices); 
-      
+
         // Find Gaussian curvature K_g and mean curvature H 
+        double A_i = findVoronoiArea(currentVertex, vertices); 
         double K_g = findGaussianCurvature(currentVertex, vertices, A_i); 
         double H = findMeanCurvature(currentVertex, vertices, A_i); 
+       
      
         // Correct for round-off errors 
         K_g = std::abs(K_g) < EPS ? 0.0 : K_g; 
         H = std::abs(H) < EPS ? 0.0 : H; 
-       
+           
         // Calculate principle curvatures k_1 and k_2 
-        double k1 = H + sqrt(H * H - K_g); 
-        double k2 = H - sqrt(H * H - K_g);
+        double k1 = H + sqrt(std::max(0.0, H * H - K_g)); 
+        double k2 = H - sqrt(std::max(0.0, H * H - K_g));
 
         // Print for debugging 
-        std::cout << "Number of triangles: " << currentVertex.ring.size() << std::endl; 
+        /* std::cout << "Number of triangles: " << currentVertex.ring.size() << std::endl; 
         std::cout << "Voronoi Area: " << A_i << std::endl; 
         std::cout << "K_g: " << K_g << std::endl;
         std::cout << "H: " << H << std::endl; 
         std::cout << "K1: " << k1 << std::endl;
-        std::cout << "K2: " << k2 << std::endl;
+        std::cout << "K2: " << k2 << std::endl;*/ 
 
+        std::cout << "K_g: " << K_g << std::endl;
+        std::cout << "H: " << H << std::endl; 
+        std::cout << "delta x: " << H * H - K_g << std::endl; 
+       
         double vertexCurvature = (0.5 * (k1 + k2));  
 
-        std::cout << "Curvature " << i << ": " << vertexCurvature << std::endl; 
         currentVertex.setCurvature(vertexCurvature); 
         curvature += vertexCurvature; 
     }
@@ -289,6 +309,6 @@ std::vector<glm::vec3> heatColor(std::vector<glm::uvec3>& triangles,
 
 void scale(std::vector<Vertex>& vertices) {
     for (Vertex& v : vertices) {
-        v.position = 0.01f * v.position; 
+        v.position = 0.03f * v.position; 
     }
 }
