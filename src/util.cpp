@@ -78,7 +78,7 @@ double mixed_voronoi(Vertex& currentVertex, Vertex& j, Vertex& p, Vertex& q)
 }
 
 /*
-* Finds Voronoi Area, simple 1/3 of the area of the surrounding neighbouring triangles
+* Finds Voronoi Area
 */
 double find_voronoi_area(Vertex& currentVertex,
     std::vector<Vertex>& vertices) 
@@ -180,8 +180,9 @@ double find_mean_curvature(Vertex& currentVertex,
 /*
 * Calculates the global curvature of a mesh
 * Sources:
-*   1) http://rodolphe-vaillant.fr/entry/33/curvature-of-a-triangle-mesh-definition-and-computation
-*   2) http://www.geometry.caltech.edu/pubs/DMSB_III.pdf
+*   1) http://multires.caltech.edu/pubs/diffGeoOps.pdf
+    2) http://rodolphe-vaillant.fr/entry/33/curvature-of-a-triangle-mesh-definition-and-computation
+*   3) http://www.geometry.caltech.edu/pubs/DMSB_III.pdf
 */
 double find_curvature(std::vector<glm::uvec3>& triangles, 
     std::vector<Vertex>& vertices, 
