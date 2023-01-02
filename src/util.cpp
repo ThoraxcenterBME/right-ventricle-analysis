@@ -158,13 +158,6 @@ double find_mean_curvature(Vertex& currentVertex,
         // Get previous vertex 
         Vertex q = k == 0 ? vertices[currentVertex.ring[ringSize - 1]] : vertices[currentVertex.ring[(k - 1)]]; 
 
-        // Check if iterations of the ring is correct, only check for one vertex 
-        /* if (currentVertex.index == 37) {
-            std::cout << "Current vertex j: " << j.index << std::endl; 
-            std::cout << "Forward vertex j + 1: " << p.index << std::endl; 
-            std::cout << "Backward vertex j - 1: " << q.index << std::endl; 
-        }*/ 
-
         // Find cot(alpha)
         glm::vec3 p_i = currentVertex.position - p.position; 
         glm::vec3 p_j = j.position - p.position; 
@@ -179,14 +172,6 @@ double find_mean_curvature(Vertex& currentVertex,
 
         glm::vec3 check = j.position - currentVertex.position; 
         laPlace += (float)(alphaWeight + betaWeight) * (currentVertex.position - j.position);
-      
-        // Some information
-        /* if (ringSize == 6 && currentVertex.index == 37) {
-            std::cout << "angles: " << alpha*conversion << " " << beta*conversion << std::endl; 
-            std::cout << "weights (summed): " << glm::cot(alpha) + glm::cot(beta) << std::endl; 
-            std::cout << "vector: " << check.x << " " << check.y << " " << check.z << std::endl; 
-        } */ 
-
     }
 
     return (1.0 / (4 * A_i)) * glm::length(laPlace); 
