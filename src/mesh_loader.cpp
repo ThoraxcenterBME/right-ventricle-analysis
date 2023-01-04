@@ -162,6 +162,25 @@ double largestDist(std::vector<Vertex>& vertices) {
     return dist; 
 }
 
+// Mark some vertices as not included in curvature calculation 
+void mark_excluded(std::string& name, std::vector<Vertex>& vertices)
+{
+    // Not a beutel
+    if (vertices.size() < 936) {
+        return; 
+    }
+    std::ifstream myfile;
+    myfile.open(std::filesystem::path(DATA_DIR) / name);
+    std::string linebuf; 
+
+    while (std::getline(myfile, linebuf)) {
+        std::istringstream lines(linebuf);
+        int key;
+        lines >> key; 
+        vertices[key - 1].exclude = true; 
+    }
+}
+
 Mesh loadMeshRV(std::istream& in) {
     Mesh rv = {}; 
     std::vector<Vertex> vertices = {}; 

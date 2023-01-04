@@ -202,8 +202,12 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
     std::vector<Vertex>& vertices, 
     std::map<int, std::vector<int>>& vertexToTri) 
 {
+    int vertices_count = 0; 
     double curvature = 0.0; 
     for (int i = 0; i < vertices.size(); i++) {
+        // If the vertex should be excluded
+        if (vertices[i].exclude)
+            continue; 
         // Retrieve current vertex and voronoi area 
         Vertex& currentVertex = vertices[i]; 
 
@@ -216,10 +220,6 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
         // Correct for round-off errors 
         K_g = std::abs(K_g) < EPS ? 0.0 : K_g; 
         H = std::abs(H) < EPS ? 0.0 : H; 
-
-        if (H * H - K_g < 0) {
-            std::cout << "H*H < K_g < 0" << std::endl; 
-        }
            
         // Calculate principle curvatures k_1 and k_2 
         double k1 = H + sqrt(std::max(0.0, H * H - K_g)); 
@@ -236,10 +236,11 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
         double vertexCurvature = (0.5 * (k1 + k2));  
         currentVertex.setCurvature(vertexCurvature); 
         curvature += vertexCurvature; 
+        vertices_count++; 
     }
 
     // Average the curvature 
-    curvature /= vertices.size(); 
+    curvature /= vertices_count; 
     
     return curvature; 
 }

@@ -23,6 +23,7 @@ struct Vertex {
 	void setCurvature(double c) {
             curvature = c; 
 	}
+    bool exclude = false; // whether it should be excluded in the curvature calculation
 	[[nodiscard]] constexpr bool operator==(const Vertex&) const noexcept = default;
 };
 

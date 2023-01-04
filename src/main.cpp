@@ -265,6 +265,7 @@ int main(int argc, char** argv)
     Window window { "RV Beutel Visualisation", glm::ivec2(800), OpenGLVersion::GL2 };
     std::string fileName = "ref.obj ";
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
+    std::string exclude_vertices = "exclude.txt"; 
     bool scaleNeeded = true;
 
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
@@ -278,6 +279,7 @@ int main(int argc, char** argv)
 
     // Initialise the rings over the vertices
     loadRingFromFile(ring, rv.vertices); 
+    mark_excluded(exclude_vertices, rv.vertices); 
     
     ProgramState state {};
     Mesh rv_graphical = loadMesh(argv[1] ? argv[1] : std::filesystem::path(DATA_DIR) / fileName, true)[0];
