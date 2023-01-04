@@ -22,3 +22,27 @@ void drawMeshWithColors(const Mesh& mesh, std::vector<glm::vec3> colors)
     }
     glEnd();
 }
+
+void drawAxis() 
+{
+    // RED x-axis
+    glColor3f(1.0, 0.0, 0.0); 
+    glBegin(GL_LINES);
+    glVertex3f(-4.0, 0.0f, 0.0f);
+    glVertex3f(4.0, 0.0f, 0.0f);
+    glEnd();
+
+    // GREEN y-axis
+    glColor3f(0.0, 1.0, 0.0); 
+    glBegin(GL_LINES);
+    glVertex3f(0.0, -4.0f, 0.0f);
+    glVertex3f(0.0, 4.0f, 0.0f);
+    glEnd();
+
+    // BLUE z-axis
+    glColor3f(0.0, 0.0, 1.0); 
+    glBegin(GL_LINES);
+    glVertex3f(0.0, 0.0f, -4.0f);
+    glVertex3f(0.0, 0.0f, 4.0f); 
+    glEnd();
+}

@@ -129,11 +129,11 @@ float find_gaussian_curvature(Vertex& currentVertex,
         Vertex p = vertices[currentVertex.ring[(k + 1) % ringSize]];
         
         // Find theta_j
-        glm::vec3 ji = j.position - currentVertex.position; 
-        glm::vec3 pi = p.position - currentVertex.position; 
+        glm::vec3 ij = j.position - currentVertex.position; 
+        glm::vec3 ip = p.position - currentVertex.position; 
        
         // Find radians and add the theta value
-        double input = glm::dot(ji, pi) / (glm::length(ji) * glm::length(pi)); 
+        double input = glm::dot(ij, ip) / (glm::length(ij) * glm::length(ip)); 
         sumTheta += glm::acos(input);
     }
 
@@ -216,6 +216,10 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
         // Correct for round-off errors 
         K_g = std::abs(K_g) < EPS ? 0.0 : K_g; 
         H = std::abs(H) < EPS ? 0.0 : H; 
+
+        if (H * H - K_g < 0) {
+            std::cout << "H*H < K_g < 0" << std::endl; 
+        }
            
         // Calculate principle curvatures k_1 and k_2 
         double k1 = H + sqrt(std::max(0.0, H * H - K_g)); 
@@ -230,7 +234,6 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
         std::cout << "K2: " << k2 << std::endl;*/ 
        
         double vertexCurvature = (0.5 * (k1 + k2));  
-
         currentVertex.setCurvature(vertexCurvature); 
         curvature += vertexCurvature; 
     }
@@ -245,7 +248,7 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
 glm::vec3 heat_color_calculation(const Vertex& vertex, double min, double max) {
     // Uniform curvature
     if (max - min < 1e-6)
-        return glm::vec3(0.0f, 1.0f, 1.0f); 
+        return glm::vec3(0.0f, 1.0f, 0.0f); 
 
     glm::vec3 c = glm::vec3(0.0f); 
     float scaledCurvature = (vertex.curvature - min) / (max - min); 
@@ -295,11 +298,14 @@ std::vector<glm::vec3> heat_color(std::vector<glm::uvec3>& triangles,
         colors.push_back(heat_color_calculation(v, minMax.first, minMax.second));
     }
 
+    std::cout << "min: " << minMax.first << std::endl; 
+    std::cout << "max: " << minMax.second << std::endl; 
     return colors; 
 }
 
 void scale(std::vector<Vertex>& vertices) {
     for (Vertex& v : vertices) {
         v.position = 0.03f * v.position; 
+        v.position.z += 2.0f; 
     }
 }

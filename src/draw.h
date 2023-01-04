@@ -8,3 +8,4 @@ DISABLE_WARNINGS_POP()
 #include <span>
 
 void drawMeshWithColors(const Mesh& mesh, std::vector<glm::vec3> colors);
+void drawAxis(); 

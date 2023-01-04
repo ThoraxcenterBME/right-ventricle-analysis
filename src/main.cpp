@@ -178,6 +178,7 @@ void draw(const ProgramState& state, const Trackball& camera, std::vector<glm::v
     glEnable(GL_NORMALIZE);
 
     drawMeshWithColors(state.myMesh, vertexColors);
+    drawAxis();
 
     // Disable depth write because we don't want the points in our depth buffer (messes with user interaction).
     glDepthMask(GL_FALSE); // Disable depth write.
@@ -246,7 +247,6 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info)
     ImGui::Spacing();
     ImGui::Separator();
 
-
     // Display other information ...
     ImGui::End();
 }
@@ -263,9 +263,9 @@ void printHelp()
 int main(int argc, char** argv)
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(800), OpenGLVersion::GL2 };
-    std::string fileName = "large-sphere.obj";
-    std::string ring = "ring-large.txt"; // ring-indices, ring-sphere ring-large
-    bool scaleNeeded = false;
+    std::string fileName = "ref.obj ";
+    std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
+    bool scaleNeeded = true;
 
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
     trackball.disableTranslation();
