@@ -204,6 +204,9 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
 {
     int vertices_count = 0; 
     double curvature = 0.0; 
+    double volume = find_volume(triangles, vertices); 
+    double k_reg = std::cbrt((4 * M_PI) / (3 * volume)); 
+
     for (int i = 0; i < vertices.size(); i++) {
         // If the vertex should be excluded
         if (vertices[i].exclude)
@@ -234,7 +237,11 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
         std::cout << "K2: " << k2 << std::endl;*/ 
        
         double vertexCurvature = (0.5 * (k1 + k2));  
+        double k_n = vertexCurvature / k_reg; 
+
         currentVertex.setCurvature(vertexCurvature); 
+        currentVertex.set_index_curv(k_n - 1); // How _much_ it deviates from 1 
+
         curvature += vertexCurvature; 
         vertices_count++; 
     }
@@ -250,6 +257,9 @@ glm::vec3 heat_color_calculation(const Vertex& vertex, double min, double max) {
     // Uniform curvature
     if (max - min < 1e-6)
         return glm::vec3(0.0f, 1.0f, 0.0f); 
+    if (vertex.exclude) { // Excluded in curvature calculation 
+        return glm::vec3(0.4, 0.4, 0.4);
+    }
 
     glm::vec3 c = glm::vec3(0.0f); 
     float scaledCurvature = (vertex.curvature - min) / (max - min); 

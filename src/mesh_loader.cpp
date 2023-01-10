@@ -177,7 +177,7 @@ void mark_excluded(std::string& name, std::vector<Vertex>& vertices)
         std::istringstream lines(linebuf);
         int key;
         lines >> key; 
-        vertices[key - 1].exclude = true; 
+        vertices[key].exclude = true; 
     }
 }
 

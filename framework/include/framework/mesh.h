@@ -18,10 +18,14 @@ struct Vertex {
 	glm::vec2 texCoord; // Texture coordinate
     std::vector<int> ring; // Saves the vertices that make the 1-ring neighbourhood
 	int ringCount; 
-	double curvature; 
+	double curvature;
+    double indexed_curv;
 	int index; 
 	void setCurvature(double c) {
-            curvature = c; 
+		curvature = c; 
+	}
+	void set_index_curv(double c) {
+		indexed_curv = c; 
 	}
     bool exclude = false; // whether it should be excluded in the curvature calculation
 	[[nodiscard]] constexpr bool operator==(const Vertex&) const noexcept = default;
