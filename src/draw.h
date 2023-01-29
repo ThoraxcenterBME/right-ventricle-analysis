@@ -9,3 +9,4 @@ DISABLE_WARNINGS_POP()
 
 void drawMeshWithColors(const Mesh& mesh, std::vector<glm::vec3> colors);
 void drawAxis(); 
+void draw_regions(std::vector<Vertex>& vertices); 

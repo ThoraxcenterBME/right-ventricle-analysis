@@ -70,6 +70,12 @@ struct RVInfo {
     float surfaceArea; 
     float curvature; 
     float radius; 
+    float region1; 
+    float region2; 
+    float region3; 
+    float region4; 
+    float region5; 
+    float region6; 
 };
 
 glm::vec3 computeLighting(const ProgramState& programState, unsigned vertexIndex, const glm::vec3& cameraPos, const Light& light)
@@ -247,6 +253,12 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info)
     ImGui::Spacing();
     ImGui::Separator();
 
+    // Display Region 1 
+    std::string r1_curvature = "Curvature (Inflow Tract): " + std::to_string(info.region1);
+    ImGui::Text(r1_curvature.c_str());
+    ImGui::Spacing();
+    ImGui::Separator();
+
     // Display other information ...
     ImGui::End();
 }
@@ -266,6 +278,7 @@ int main(int argc, char** argv)
     std::string fileName = "ref.obj ";
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt"; 
+    std::string regions = "region.txt"; 
     bool scaleNeeded = true;
 
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
@@ -280,11 +293,10 @@ int main(int argc, char** argv)
     // Initialise the rings over the vertices
     loadRingFromFile(ring, rv.vertices); 
     mark_excluded(exclude_vertices, rv.vertices); 
+    mark_regions(regions, rv.vertices); 
     
     ProgramState state {};
-    Mesh rv_graphical = loadMesh(argv[1] ? argv[1] : std::filesystem::path(DATA_DIR) / fileName, true)[0];
     state.myMesh = rv;
-    
     state.materialInformation.Kd = glm::vec3(75, 139, 59) / 255.0f;
     state.materialInformation.Ks = glm::vec3(221, 42, 116) / 255.0f;
     state.materialInformation.shininess = 20.0f;
@@ -326,6 +338,7 @@ int main(int argc, char** argv)
 
         draw(state, trackball, vertexColors);
         drawUI(state, trackball, info);
+        draw_regions(state.myMesh.vertices); 
 
         window.swapBuffers();
     }

@@ -29,6 +29,10 @@ struct Vertex {
 	}
     bool exclude = false; // whether it should be excluded in the curvature calculation
 	[[nodiscard]] constexpr bool operator==(const Vertex&) const noexcept = default;
+    int region; 
+	void set_region(int r) {
+		region = r; 
+	}
 };
 
 struct Material {
