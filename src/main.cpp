@@ -227,6 +227,13 @@ void computeLighting(const ProgramState& state, const glm::vec3& cameraPos, std:
 
 void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info)
 {
+    glm::vec3 c1 = glm::vec3(0.7, 0.1, 0.8);
+    glm::vec3 c2 = glm::vec3(0.9, 0.9, 0.1);
+    glm::vec3 c3 = glm::vec3(0.7, 0.7, 0.8);
+    glm::vec3 c4 = glm::vec3(0.9, 0.5, 0.1);
+    glm::vec3 c5 = glm::vec3(1.0, 1.0, 1.0);
+    glm::vec3 c6 = glm::vec3(1.0, 0.0, 0.0); 
+
     ImGui::Begin("View RV Data");
 
     // Display Volume
@@ -255,7 +262,38 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info)
 
     // Display Region 1 
     std::string r1_curvature = "Curvature (Inflow Tract): " + std::to_string(info.region1);
-    ImGui::Text(r1_curvature.c_str());
+    ImGui::TextColored(ImVec4(c1.x, c1.y, c1.z, 1.0), r1_curvature.c_str());
+    ImGui::Spacing();
+    ImGui::Separator();
+
+    // Display Region 2
+    std::string r2_curvature = "Curvature (Outflow Tract): " + std::to_string(info.region2);
+    ImGui::TextColored(ImVec4(c2.x, c2.y, c2.z, 1.0), r2_curvature.c_str());
+    ImGui::Spacing();
+    ImGui::Separator();
+
+    // Display Region 3
+    std::string r3_curvature = "Curvature (Septal Body): " + std::to_string(info.region3);
+    ImGui::TextColored(ImVec4(c3.x, c3.y, c3.z, 1.0), r3_curvature.c_str());
+    ImGui::Spacing();
+    ImGui::Separator();
+
+
+    // Display Region 4
+    std::string r4_curvature = "Curvature (Free-wall Body): " + std::to_string(info.region4);
+    ImGui::TextColored(ImVec4(c4.x, c4.y, c4.z, 1.0), r4_curvature.c_str());
+    ImGui::Spacing();
+    ImGui::Separator();
+
+    // Display Region 5
+    std::string r5_curvature = "Curvature (Septal Apex): " + std::to_string(info.region5);
+    ImGui::TextColored(ImVec4(c5.x, c5.y, c5.z, 1.0), r5_curvature.c_str());
+    ImGui::Spacing();
+    ImGui::Separator();
+
+    // Display Region 6
+    std::string r6_curvature = "Curvature (Free-wall Apex): " + std::to_string(info.region6);
+    ImGui::TextColored(ImVec4(c6.x, c6.y, c6.z, 1.0), r6_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
@@ -269,6 +307,16 @@ void printHelp()
     std::cout << "SPACE - replaces mouse click for selection, will then call your light placement function" << std::endl;
 }
 
+void set_regional(RVInfo& info, std::vector<Vertex>& vertices) {
+    std::vector<double> curvatures = find_regional_curvature(vertices); 
+    info.region1 = curvatures[0];
+    info.region2 = curvatures[1];
+    info.region3 = curvatures[2];
+    info.region4 = curvatures[3];
+    info.region5 = curvatures[4];
+    info.region6 = curvatures[5];
+}
+
 /*
 * This main function would be to plot the RV beutel 
 */
@@ -280,6 +328,7 @@ int main(int argc, char** argv)
     std::string exclude_vertices = "exclude.txt"; 
     std::string regions = "region.txt"; 
     bool scaleNeeded = true;
+    bool showRegions = true; 
 
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
     trackball.disableTranslation();
@@ -329,6 +378,8 @@ int main(int argc, char** argv)
         scale(state.myMesh.vertices);
     }   
 
+    set_regional(info, rv.vertices); 
+
     while (!window.shouldClose()) {
         window.updateInput();
         glViewport(0, 0, window.getFrameBufferSize().x, window.getFrameBufferSize().y);
@@ -338,7 +389,9 @@ int main(int argc, char** argv)
 
         draw(state, trackball, vertexColors);
         drawUI(state, trackball, info);
-        draw_regions(state.myMesh.vertices); 
+        if (showRegions) {
+            draw_regions(state.myMesh.vertices); 
+        }
 
         window.swapBuffers();
     }

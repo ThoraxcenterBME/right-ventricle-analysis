@@ -95,12 +95,12 @@ void draw_sphere(const glm::vec3& center, float radius, const glm::vec3& color)
 
 void draw_regions(std::vector<Vertex>& vertices)
 {
-    glm::vec3 c1 = glm::vec3(0.7, 0.1, 0.7); 
+    glm::vec3 c1 = glm::vec3(0.7, 0.1, 0.8); 
     glm::vec3 c2 = glm::vec3(0.9, 0.9, 0.1); 
-    glm::vec3 c3 = glm::vec3(0.5, 0.5, 0.5); 
+    glm::vec3 c3 = glm::vec3(0.7, 0.7, 0.8); 
     glm::vec3 c4 = glm::vec3(0.9, 0.5, 0.1); 
     glm::vec3 c5 = glm::vec3(1.0, 1.0, 1.0); 
-    glm::vec3 c6 = glm::vec3(0.0, 0.0, 0.0); 
+    glm::vec3 c6 = glm::vec3(1.0, 0.0, 0.0); 
     for (Vertex& v : vertices) {
         switch (v.region) {
             case 1: 

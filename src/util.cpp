@@ -320,3 +320,52 @@ void scale(std::vector<Vertex>& vertices) {
         v.position.z += 2.0f; 
     }
 }
+
+std::vector<double> find_regional_curvature(std::vector<Vertex>& vertices) 
+{
+
+    std::pair<double, int> cn_1 = { 0, 0 }; 
+    std::pair<double, int> cn_2 = { 0, 0 }; 
+    std::pair<double, int> cn_3 = { 0, 0 }; 
+    std::pair<double, int> cn_4 = { 0, 0 }; 
+    std::pair<double, int> cn_5 = { 0, 0 }; 
+    std::pair<double, int> cn_6 = { 0, 0 }; 
+
+    for (Vertex& v : vertices) {
+        switch (v.region) {
+        case 1:
+            cn_1.first += v.curvature; 
+            cn_1.second++; 
+            continue;
+        case 2:
+            cn_2.first += v.curvature;
+            cn_2.second++; 
+            continue;
+        case 3:
+            cn_3.first += v.curvature;
+            cn_3.second++; 
+            continue;
+        case 4:
+            cn_4.first += v.curvature;
+            cn_4.second++; 
+            continue;
+        case 5:
+            cn_5.first += v.curvature;
+            cn_5.second++; 
+            continue;
+        case 6:
+            cn_6.first += v.curvature;
+            cn_6.second++; 
+            continue;
+        }
+    }
+
+    return { cn_1.first / cn_1.second, 
+        cn_2.first / cn_2.second, 
+        cn_3.first / cn_3.second, 
+        cn_4.first / cn_4.second, 
+        cn_5.first / cn_5.second,
+        cn_6.first / cn_6.second,
+    }; 
+
+}
