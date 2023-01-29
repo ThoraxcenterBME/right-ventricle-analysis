@@ -96,10 +96,31 @@ void draw_sphere(const glm::vec3& center, float radius, const glm::vec3& color)
 void draw_regions(std::vector<Vertex>& vertices)
 {
     glm::vec3 c1 = glm::vec3(0.7, 0.1, 0.7); 
+    glm::vec3 c2 = glm::vec3(0.9, 0.9, 0.1); 
+    glm::vec3 c3 = glm::vec3(0.5, 0.5, 0.5); 
+    glm::vec3 c4 = glm::vec3(0.9, 0.5, 0.1); 
+    glm::vec3 c5 = glm::vec3(1.0, 1.0, 1.0); 
+    glm::vec3 c6 = glm::vec3(0.0, 0.0, 0.0); 
     for (Vertex& v : vertices) {
-        if (v.region == 1) {
-            // std::cout << "here" << std::endl; 
-           draw_sphere(v.position, 2e-2f, c1); 
-        }
+        switch (v.region) {
+            case 1: 
+                draw_sphere(v.position, 1e-2f, c1); 
+                continue; 
+            case 2: 
+                draw_sphere(v.position, 1e-2f, c2);
+                continue;
+            case 3:
+                draw_sphere(v.position, 1e-2f, c3);
+                continue; 
+            case 4:
+                draw_sphere(v.position, 1e-2f, c4);
+                continue;  
+            case 5:
+                draw_sphere(v.position, 1e-2f, c5);
+                continue;
+            case 6:
+                draw_sphere(v.position, 1e-2f, c6);
+                continue;
+        } 
     }
 }
