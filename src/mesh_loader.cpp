@@ -162,7 +162,78 @@ double largestDist(std::vector<Vertex>& vertices) {
     return dist; 
 }
 
+// Mark some vertices as not included in curvature calculation 
+void mark_excluded(std::string& name, std::vector<Vertex>& vertices)
+{
+    // Not a beutel
+    if (vertices.size() < 936) {
+        return; 
+    }
+    std::ifstream myfile;
+    myfile.open(std::filesystem::path(DATA_DIR) / name);
+    std::string linebuf; 
+
+    while (std::getline(myfile, linebuf)) {
+        std::istringstream lines(linebuf);
+        int key;
+        lines >> key; 
+        vertices[key].exclude = true; 
+    }
+}
+
+void mark_regions(std::string& in, std::vector<Vertex>& vertices)
+{
+    // Not a beutel
+    if (vertices.size() < 936) {
+        return;
+    }
+    
+    std::ifstream myfile;
+    myfile.open(std::filesystem::path(DATA_DIR) / in);
+    std::string linebuf;
+
+    while (std::getline(myfile, linebuf)) {
+        std::istringstream lines(linebuf);
+        std::string lineType;
+        lines >> lineType;
+        int key; 
+        lines >> key; 
+
+        // Inflow Tract = 1 
+        if (lineType == "it") {
+            vertices[key].set_region(1); 
+            continue; 
+        }
+        // Outflow Tract = 2
+        if (lineType == "ot") {
+            vertices[key].set_region(2);
+            continue; 
+        }
+        // Septal Body = 3
+        if (lineType == "sb") {
+            vertices[key].set_region(3);
+            continue; 
+        }
+        // Free wall Body = 4 
+        if (lineType == "fb") {
+            vertices[key].set_region(4);
+            continue; 
+        }
+        // Septal Apex = 5
+        if (lineType == "sa") {
+            vertices[key].set_region(5);
+            continue; 
+        }
+        // Free-wall Apex = 6 
+        if (lineType == "fa") {
+            vertices[key].set_region(6);
+            continue; 
+        }
+    }
+}
+
 Mesh loadMeshRV(std::istream& in) {
+
     Mesh rv = {}; 
     std::vector<Vertex> vertices = {}; 
     std::vector<glm::uvec3> triangles = {}; 

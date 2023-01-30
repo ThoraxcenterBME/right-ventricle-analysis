@@ -128,11 +128,11 @@ float find_gaussian_curvature(Vertex& currentVertex,
         Vertex p = vertices[currentVertex.ring[(k + 1) % ringSize]];
         
         // Find theta_j
-        glm::vec3 ji = j.position - currentVertex.position; 
-        glm::vec3 pi = p.position - currentVertex.position; 
+        glm::vec3 ij = j.position - currentVertex.position; 
+        glm::vec3 ip = p.position - currentVertex.position; 
        
         // Find radians and add the theta value
-        double input = glm::dot(ji, pi) / (glm::length(ji) * glm::length(pi)); 
+        double input = glm::dot(ij, ip) / (glm::length(ij) * glm::length(ip)); 
         sumTheta += glm::acos(input);
     }
 
@@ -184,8 +184,15 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
     std::vector<Vertex>& vertices, 
     std::map<int, std::vector<int>>& vertexToTri) 
 {
+    int vertices_count = 0; 
     double curvature = 0.0; 
+    double volume = find_volume(triangles, vertices); 
+    double k_reg = std::cbrt((4 * M_PI) / (3 * volume)); 
+
     for (int i = 0; i < vertices.size(); i++) {
+        // If the vertex should be excluded
+        if (vertices[i].exclude)
+            continue; 
         // Retrieve current vertex and voronoi area 
         Vertex& currentVertex = vertices[i]; 
 
@@ -210,13 +217,17 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
         std::cout << "K2: " << k2 << std::endl;*/ 
        
         double vertexCurvature = (0.5 * (k1 + k2));  
+        double k_n = vertexCurvature / k_reg; 
 
         currentVertex.setCurvature(vertexCurvature); 
+        currentVertex.set_index_curv(k_n - 1); // How _much_ it deviates from 1 
+
         curvature += vertexCurvature; 
+        vertices_count++; 
     }
 
     // Average the curvature 
-    curvature /= vertices.size(); 
+    curvature /= vertices_count; 
     
     return curvature; 
 }
@@ -225,7 +236,10 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
 glm::vec3 heat_color_calculation(const Vertex& vertex, double min, double max) {
     // Uniform curvature
     if (max - min < 1e-6)
-        return glm::vec3(0.0f, 1.0f, 1.0f); 
+        return glm::vec3(0.0f, 1.0f, 0.0f); 
+    if (vertex.exclude) { // Excluded in curvature calculation 
+        return glm::vec3(0.4, 0.4, 0.4);
+    }
 
     glm::vec3 c = glm::vec3(0.0f); 
     float scaledCurvature = (vertex.curvature - min) / (max - min); 
@@ -275,11 +289,63 @@ std::vector<glm::vec3> heat_color(std::vector<glm::uvec3>& triangles,
         colors.push_back(heat_color_calculation(v, minMax.first, minMax.second));
     }
 
+    std::cout << "min: " << minMax.first << std::endl; 
+    std::cout << "max: " << minMax.second << std::endl; 
     return colors; 
 }
 
 void scale(std::vector<Vertex>& vertices) {
     for (Vertex& v : vertices) {
         v.position = 0.03f * v.position; 
+        v.position.z += 2.0f; 
     }
+}
+
+std::vector<double> find_regional_curvature(std::vector<Vertex>& vertices) 
+{
+
+    std::pair<double, int> cn_1 = { 0, 0 }; 
+    std::pair<double, int> cn_2 = { 0, 0 }; 
+    std::pair<double, int> cn_3 = { 0, 0 }; 
+    std::pair<double, int> cn_4 = { 0, 0 }; 
+    std::pair<double, int> cn_5 = { 0, 0 }; 
+    std::pair<double, int> cn_6 = { 0, 0 }; 
+
+    for (Vertex& v : vertices) {
+        switch (v.region) {
+        case 1:
+            cn_1.first += v.curvature; 
+            cn_1.second++; 
+            continue;
+        case 2:
+            cn_2.first += v.curvature;
+            cn_2.second++; 
+            continue;
+        case 3:
+            cn_3.first += v.curvature;
+            cn_3.second++; 
+            continue;
+        case 4:
+            cn_4.first += v.curvature;
+            cn_4.second++; 
+            continue;
+        case 5:
+            cn_5.first += v.curvature;
+            cn_5.second++; 
+            continue;
+        case 6:
+            cn_6.first += v.curvature;
+            cn_6.second++; 
+            continue;
+        }
+    }
+
+    return { cn_1.first / cn_1.second, 
+        cn_2.first / cn_2.second, 
+        cn_3.first / cn_3.second, 
+        cn_4.first / cn_4.second, 
+        cn_5.first / cn_5.second,
+        cn_6.first / cn_6.second,
+    }; 
+
 }

@@ -70,6 +70,12 @@ struct RVInfo {
     float surfaceArea; 
     float curvature; 
     float radius; 
+    float region1; 
+    float region2; 
+    float region3; 
+    float region4; 
+    float region5; 
+    float region6; 
 };
 
 glm::vec3 computeLighting(const ProgramState& programState, unsigned vertexIndex, const glm::vec3& cameraPos, const Light& light)
@@ -178,6 +184,7 @@ void draw(const ProgramState& state, const Trackball& camera, std::vector<glm::v
     glEnable(GL_NORMALIZE);
 
     drawMeshWithColors(state.myMesh, vertexColors);
+    drawAxis();
 
     // Disable depth write because we don't want the points in our depth buffer (messes with user interaction).
     glDepthMask(GL_FALSE); // Disable depth write.
@@ -220,6 +227,7 @@ void computeLighting(const ProgramState& state, const glm::vec3& cameraPos, std:
 
 void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info)
 {
+    ColorRegion color = {}; 
     ImGui::Begin("View RV Data");
 
     // Display Volume
@@ -246,6 +254,42 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info)
     ImGui::Spacing();
     ImGui::Separator();
 
+    // Display Region 1 
+    std::string r1_curvature = "Curvature (Inflow Tract): " + std::to_string(info.region1);
+    ImGui::TextColored(ImVec4(color.c1.x, color.c1.y, color.c1.z, 1.0), r1_curvature.c_str());
+    ImGui::Spacing();
+    ImGui::Separator();
+
+    // Display Region 2
+    std::string r2_curvature = "Curvature (Outflow Tract): " + std::to_string(info.region2);
+    ImGui::TextColored(ImVec4(color.c2.x, color.c2.y, color.c2.z, 1.0), r2_curvature.c_str());
+    ImGui::Spacing();
+    ImGui::Separator();
+
+    // Display Region 3
+    std::string r3_curvature = "Curvature (Septal Body): " + std::to_string(info.region3);
+    ImGui::TextColored(ImVec4(color.c3.x, color.c3.y, color.c3.z, 1.0), r3_curvature.c_str());
+    ImGui::Spacing();
+    ImGui::Separator();
+
+
+    // Display Region 4
+    std::string r4_curvature = "Curvature (Free-wall Body): " + std::to_string(info.region4);
+    ImGui::TextColored(ImVec4(color.c4.x, color.c4.y, color.c4.z, 1.0), r4_curvature.c_str());
+    ImGui::Spacing();
+    ImGui::Separator();
+
+    // Display Region 5
+    std::string r5_curvature = "Curvature (Septal Apex): " + std::to_string(info.region5);
+    ImGui::TextColored(ImVec4(color.c5.x, color.c5.y, color.c5.z, 1.0), r5_curvature.c_str());
+    ImGui::Spacing();
+    ImGui::Separator();
+
+    // Display Region 6
+    std::string r6_curvature = "Curvature (Free-wall Apex): " + std::to_string(info.region6);
+    ImGui::TextColored(ImVec4(color.c6.x, color.c6.y, color.c6.z, 1.0), r6_curvature.c_str());
+    ImGui::Spacing();
+    ImGui::Separator();
 
     // Display other information ...
     ImGui::End();
@@ -257,15 +301,28 @@ void printHelp()
     std::cout << "SPACE - replaces mouse click for selection, will then call your light placement function" << std::endl;
 }
 
+void set_regional(RVInfo& info, std::vector<Vertex>& vertices) {
+    std::vector<double> curvatures = find_regional_curvature(vertices); 
+    info.region1 = curvatures[0];
+    info.region2 = curvatures[1];
+    info.region3 = curvatures[2];
+    info.region4 = curvatures[3];
+    info.region5 = curvatures[4];
+    info.region6 = curvatures[5];
+}
+
 /*
 * This main function would be to plot the RV beutel 
 */
 int main(int argc, char** argv)
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(800), OpenGLVersion::GL2 };
-    std::string fileName = "ref.obj";
+    std::string fileName = "ref.obj ";
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
+    std::string exclude_vertices = "exclude.txt"; 
+    std::string regions = "region.txt"; 
     bool scaleNeeded = true;
+    bool showRegions = true; 
 
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
     trackball.disableTranslation();
@@ -278,11 +335,11 @@ int main(int argc, char** argv)
 
     // Initialise the rings over the vertices
     loadRingFromFile(ring, rv.vertices); 
+    mark_excluded(exclude_vertices, rv.vertices); 
+    mark_regions(regions, rv.vertices); 
     
     ProgramState state {};
-    Mesh rv_graphical = loadMesh(argv[1] ? argv[1] : std::filesystem::path(DATA_DIR) / fileName, true)[0];
     state.myMesh = rv;
-    
     state.materialInformation.Kd = glm::vec3(75, 139, 59) / 255.0f;
     state.materialInformation.Ks = glm::vec3(221, 42, 116) / 255.0f;
     state.materialInformation.shininess = 20.0f;
@@ -315,6 +372,8 @@ int main(int argc, char** argv)
         scale(state.myMesh.vertices);
     }   
 
+    set_regional(info, rv.vertices); 
+
     while (!window.shouldClose()) {
         window.updateInput();
         glViewport(0, 0, window.getFrameBufferSize().x, window.getFrameBufferSize().y);
@@ -324,6 +383,9 @@ int main(int argc, char** argv)
 
         draw(state, trackball, vertexColors);
         drawUI(state, trackball, info);
+        if (showRegions) {
+            draw_regions(state.myMesh.vertices); 
+        }
 
         window.swapBuffers();
     }
