@@ -227,13 +227,7 @@ void computeLighting(const ProgramState& state, const glm::vec3& cameraPos, std:
 
 void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info)
 {
-    glm::vec3 c1 = glm::vec3(0.7, 0.1, 0.8);
-    glm::vec3 c2 = glm::vec3(0.9, 0.9, 0.1);
-    glm::vec3 c3 = glm::vec3(0.7, 0.7, 0.8);
-    glm::vec3 c4 = glm::vec3(0.9, 0.5, 0.1);
-    glm::vec3 c5 = glm::vec3(1.0, 1.0, 1.0);
-    glm::vec3 c6 = glm::vec3(1.0, 0.0, 0.0); 
-
+    ColorRegion color = {}; 
     ImGui::Begin("View RV Data");
 
     // Display Volume
@@ -262,38 +256,38 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info)
 
     // Display Region 1 
     std::string r1_curvature = "Curvature (Inflow Tract): " + std::to_string(info.region1);
-    ImGui::TextColored(ImVec4(c1.x, c1.y, c1.z, 1.0), r1_curvature.c_str());
+    ImGui::TextColored(ImVec4(color.c1.x, color.c1.y, color.c1.z, 1.0), r1_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
     // Display Region 2
     std::string r2_curvature = "Curvature (Outflow Tract): " + std::to_string(info.region2);
-    ImGui::TextColored(ImVec4(c2.x, c2.y, c2.z, 1.0), r2_curvature.c_str());
+    ImGui::TextColored(ImVec4(color.c2.x, color.c2.y, color.c2.z, 1.0), r2_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
     // Display Region 3
     std::string r3_curvature = "Curvature (Septal Body): " + std::to_string(info.region3);
-    ImGui::TextColored(ImVec4(c3.x, c3.y, c3.z, 1.0), r3_curvature.c_str());
+    ImGui::TextColored(ImVec4(color.c3.x, color.c3.y, color.c3.z, 1.0), r3_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
 
     // Display Region 4
     std::string r4_curvature = "Curvature (Free-wall Body): " + std::to_string(info.region4);
-    ImGui::TextColored(ImVec4(c4.x, c4.y, c4.z, 1.0), r4_curvature.c_str());
+    ImGui::TextColored(ImVec4(color.c4.x, color.c4.y, color.c4.z, 1.0), r4_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
     // Display Region 5
     std::string r5_curvature = "Curvature (Septal Apex): " + std::to_string(info.region5);
-    ImGui::TextColored(ImVec4(c5.x, c5.y, c5.z, 1.0), r5_curvature.c_str());
+    ImGui::TextColored(ImVec4(color.c5.x, color.c5.y, color.c5.z, 1.0), r5_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
     // Display Region 6
     std::string r6_curvature = "Curvature (Free-wall Apex): " + std::to_string(info.region6);
-    ImGui::TextColored(ImVec4(c6.x, c6.y, c6.z, 1.0), r6_curvature.c_str());
+    ImGui::TextColored(ImVec4(color.c6.x, color.c6.y, color.c6.z, 1.0), r6_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
