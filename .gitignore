@@ -2,3 +2,6 @@
 Beutels/
 data/
 out/
+.idea/
+*.class
+segment-rv/target
