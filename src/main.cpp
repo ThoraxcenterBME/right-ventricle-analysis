@@ -229,7 +229,8 @@ void computeLighting(const ProgramState& state, const glm::vec3& cameraPos, std:
     }
 }
 
-void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info)
+void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info, 
+    std::vector<Ray>& normals)
 {
     ColorRegion color = {}; 
     ImGui::Begin("View RV Data");
@@ -257,6 +258,23 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info)
     ImGui::Text(curveString.c_str());
     ImGui::Spacing();
     ImGui::Separator();
+
+    // Check for drawing normals
+    ImGui::Checkbox("Show Surface Normals", &show_normal_gui); 
+    if (show_normal_gui) {
+        draw_normal_rays(normals); 
+    }
+    ImGui::Spacing();
+    ImGui::Separator();
+
+    // Show regions
+    ImGui::Checkbox("Color Regions", &draw_regions_gui);
+    if (draw_regions_gui) {
+        draw_regions(state.myMesh.vertices);
+    }
+    ImGui::Spacing();
+    ImGui::Separator();
+
 
     // Display Region 1 
     std::string r1_curvature = "Curvature (Inflow Tract): " + std::to_string(info.region1);
@@ -339,11 +357,21 @@ int main(int argc, char** argv)
     // ImGUI lights
     ProgramState state {};
     state.myMesh = rv;
+    // Extra processing needed for RV Beutel 
+    if (rv.vertices.size() > 937) {
+        center_mesh(rv.vertices);
+        mark_excluded(exclude_vertices, rv.vertices);
+        mark_regions(regions, rv.vertices);
+        scale_mesh(state.myMesh.vertices);
+        center_mesh(state.myMesh.vertices);
+        mark_regions(regions, state.myMesh.vertices);
+    }
+
     state.materialInformation.Kd = glm::vec3(75, 139, 59) / 255.0f;
     state.materialInformation.Ks = glm::vec3(221, 42, 116) / 255.0f;
     state.materialInformation.shininess = 20.0f;
     meshFlipZ(state.myMesh);
-    float lp  = .85f; 
+    float lp = .85f;
     state.lights.push_back(Light { glm::vec3(lp, lp, lp), glm::vec3(224, 215, 73) / 255.0f });
     state.lights.push_back(Light { glm::vec3(-lp, lp, lp), glm::vec3(224, 215, 73) / 255.0f });
     state.lights.push_back(Light { glm::vec3(lp, -lp, lp), glm::vec3(224, 215, 73) / 255.0f });
@@ -353,14 +381,6 @@ int main(int argc, char** argv)
     state.lights.push_back(Light { glm::vec3(-lp, lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
     state.lights.push_back(Light { glm::vec3(-lp, -lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
 
-    // Extra processing needed for RV Beutel 
-    if (rv.vertices.size() > 937) {
-        center_mesh(rv.vertices);
-        mark_excluded(exclude_vertices, rv.vertices);
-        mark_regions(regions, rv.vertices);
-        scale_mesh(state.myMesh.vertices);
-        center_mesh(state.myMesh.vertices); 
-    }
     
     // Calculate the actual volume captured by mesh
     RVInfo info {};
@@ -387,8 +407,8 @@ int main(int argc, char** argv)
         computeLighting(state, trackball.position(), lightColors);
 
         draw(state, trackball, vertexColors);
-        drawUI(state, trackball, info);
-
+        drawUI(state, trackball, info, normals);
+       
         window.swapBuffers();
     }
 }
