@@ -107,7 +107,6 @@ void initializeRings(std::map<int, std::vector<int>>& vertexMap,
 // Function for printing vertex map
 void printVertexMap(std::map<int, std::vector<int>>& vmap) 
 {
-
     for (int i = 0; i < vmap.size(); i++) {
         std::cout << "Vertex: " << i << std::endl; 
         for (int j = 0; j < vmap[i].size(); j++) {
@@ -165,10 +164,6 @@ double largestDist(std::vector<Vertex>& vertices) {
 // Mark some vertices as not included in curvature calculation 
 void mark_excluded(std::string& name, std::vector<Vertex>& vertices)
 {
-    // Not a beutel
-    if (vertices.size() < 936) {
-        return; 
-    }
     std::ifstream myfile;
     myfile.open(std::filesystem::path(DATA_DIR) / name);
     std::string linebuf; 
@@ -182,12 +177,7 @@ void mark_excluded(std::string& name, std::vector<Vertex>& vertices)
 }
 
 void mark_regions(std::string& in, std::vector<Vertex>& vertices)
-{
-    // Not a beutel
-    if (vertices.size() < 936) {
-        return;
-    }
-    
+{   
     std::ifstream myfile;
     myfile.open(std::filesystem::path(DATA_DIR) / in);
     std::string linebuf;

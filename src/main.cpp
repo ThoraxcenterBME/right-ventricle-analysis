@@ -12,15 +12,18 @@ DISABLE_WARNINGS_PUSH()
 DISABLE_WARNINGS_POP()
 #include <array>
 #include <framework/mesh.h>
-#include <framework/trackball.h>
 #include <framework/ray.h>
+#include <framework/trackball.h>
 #include <framework/window.h>
+#include <fstream>
 #include <iostream>
 #include <span>
+#include <sstream>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <sstream>
+
+bool show_normal_gui = false; 
+bool draw_regions_gui = false; 
 
 enum class DiffuseMode {
     None,
@@ -318,28 +321,22 @@ void set_regional(RVInfo& info, std::vector<Vertex>& vertices) {
 int main(int argc, char** argv)
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(1000), OpenGLVersion::GL2 };
-    std::string fileName = "ref.obj ";
+    std::string fileName = "ref.obj";
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt"; 
     std::string regions = "region.txt"; 
-    bool scaleNeeded = true;
-    bool showRegions = false; 
 
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
     trackball.disableTranslation();
     printHelp();
 
-    // Load the mesh file 
+    // Load the mesh file and ring file 
     std::ifstream ifile;
     ifile.open(std::filesystem::path(DATA_DIR) / fileName);
     Mesh rv = loadMeshRV(ifile);
-    center_mesh(rv.vertices); 
+    loadRingFromFile(ring, rv.vertices);
 
-    // Initialise the rings over the vertices
-    loadRingFromFile(ring, rv.vertices); 
-    mark_excluded(exclude_vertices, rv.vertices); 
-    mark_regions(regions, rv.vertices); 
-    
+    // ImGUI lights
     ProgramState state {};
     state.myMesh = rv;
     state.materialInformation.Kd = glm::vec3(75, 139, 59) / 255.0f;
@@ -355,6 +352,15 @@ int main(int argc, char** argv)
     state.lights.push_back(Light { glm::vec3(lp, -lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
     state.lights.push_back(Light { glm::vec3(-lp, lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
     state.lights.push_back(Light { glm::vec3(-lp, -lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
+
+    // Extra processing needed for RV Beutel 
+    if (rv.vertices.size() > 937) {
+        center_mesh(rv.vertices);
+        mark_excluded(exclude_vertices, rv.vertices);
+        mark_regions(regions, rv.vertices);
+        scale_mesh(state.myMesh.vertices);
+        center_mesh(state.myMesh.vertices); 
+    }
     
     // Calculate the actual volume captured by mesh
     RVInfo info {};
@@ -363,19 +369,16 @@ int main(int argc, char** argv)
     info.curvature = find_curvature(rv.triangles, rv.vertices, rv.vertexToTri);
     info.radius = rv.radius; 
 
-    // Display heat colours
-    std::vector<glm::vec3> vertexColors = heat_color(rv.triangles, rv.vertices, rv.vertexToTri); 
+    // GUI (Visual Debug) features 
+    std::vector<glm::vec3> vertexColors = heat_color(rv.triangles, rv.vertices, rv.vertexToTri);
+    set_regional(info, rv.vertices);
+    std::vector<Ray> normals = find_normals(state.myMesh.vertices, state.myMesh.triangles);
 
-    if (scaleNeeded) {
-        scale_mesh(state.myMesh.vertices);
-    }   
-    set_regional(info, rv.vertices); // set regional curvature 
-
+    // Window Pop-up
     window.registerCharCallback([&](unsigned unicodeCodePoint) {
         keyboard(static_cast<unsigned char>(unicodeCodePoint), state, window, trackball);
     });
-    std::vector<Ray> normals = find_normals(state.myMesh.vertices, state.myMesh.triangles);
-    
+
     while (!window.shouldClose()) {
         window.updateInput();
         glViewport(0, 0, window.getFrameBufferSize().x, window.getFrameBufferSize().y);
@@ -385,11 +388,6 @@ int main(int argc, char** argv)
 
         draw(state, trackball, vertexColors);
         drawUI(state, trackball, info);
-      //  draw_normal_rays(normals); 
-
-        if (showRegions) {
-            draw_regions(state.myMesh.vertices); 
-        }
 
         window.swapBuffers();
     }

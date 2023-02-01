@@ -11,10 +11,9 @@
 constexpr auto EPS = 1e-7;
 constexpr auto M_PI = 3.14159265358979323846; 
  
-/*
- * Used the source: http://chenlab.ece.cornell.edu/Publication/Cha/icip01_Cha.pdf
- * to find the volume of a 3D mesh.
- */
+
+ // Used the source: http://chenlab.ece.cornell.edu/Publication/Cha/icip01_Cha.pdf
+ // to find the volume of a 3D mesh.
 double find_volume(std::vector<glm::uvec3>& triangles, 
     std::vector<Vertex>& vertices)
 {
@@ -33,9 +32,8 @@ double find_volume(std::vector<glm::uvec3>& triangles,
     return abs(volume) / 1000;
 }
 
-/*
-* Calculates surface area of the mesh 
-*/
+
+// Calculates surface area of the mesh 
 double find_surface_area(std::vector<glm::uvec3>& triangles, 
     std::vector<Vertex>& vertices) 
 {
@@ -53,8 +51,11 @@ double find_surface_area(std::vector<glm::uvec3>& triangles,
     return 0.5 * sa; 
 }
 
+
 // Checks whether a triangle has an obtuse angle 
-bool is_obtuse(Vertex& currentVertex, Vertex& j, Vertex& p)
+bool is_obtuse(Vertex& currentVertex,
+    Vertex& j, 
+    Vertex& p)
 {
     double cosine_i = glm::dot(glm::normalize(j.position - currentVertex.position), glm::normalize(p.position - currentVertex.position));
     double cosine_j = glm::dot(glm::normalize(currentVertex.position - j.position), glm::normalize(p.position - j.position));
@@ -63,8 +64,12 @@ bool is_obtuse(Vertex& currentVertex, Vertex& j, Vertex& p)
     return cosine_i < 0 || cosine_j < 0 || cosine_p < 0; 
 }
 
+
 // Computes mixed voronoi region area for a triangle
-double mixed_voronoi(Vertex& currentVertex, Vertex& j, Vertex& p, Vertex& q) 
+double mixed_voronoi(Vertex& currentVertex,
+    Vertex& j, 
+    Vertex& p,
+    Vertex& q) 
 {
     // Find cot(alpha)
     glm::vec3 p_i = currentVertex.position - p.position;
@@ -80,9 +85,8 @@ double mixed_voronoi(Vertex& currentVertex, Vertex& j, Vertex& p, Vertex& q)
     return 0.125 * (alphaWeight + betaWeight) * (norm * norm); 
 }
 
-/*
-* Finds Voronoi Area
-*/
+
+// Finds Voronoi Area
 double find_voronoi_area(Vertex& currentVertex,
     std::vector<Vertex>& vertices) 
 {
@@ -114,9 +118,8 @@ double find_voronoi_area(Vertex& currentVertex,
     return  A_i; 
 }
 
-/*
-* Find the Gaussian curvature k_g at a vertex v. 
-*/
+
+// Find the Gaussian curvature k_g at a vertex v. 
 float find_gaussian_curvature(Vertex& currentVertex, 
     std::vector<Vertex>& vertices, 
     float A_i)
@@ -142,9 +145,8 @@ float find_gaussian_curvature(Vertex& currentVertex,
     return (2 * M_PI - sumTheta) / A_i; 
 }
 
-/*
-* This finds the mean curvature at a vertex v - H
- */
+
+// This finds the mean curvature at a vertex v - H
 glm::vec3 find_mean_curvature(Vertex& currentVertex, 
     std::vector<Vertex>& vertices,
     float A_i) 
@@ -177,10 +179,10 @@ glm::vec3 find_mean_curvature(Vertex& currentVertex,
 }
 
 
-
 // https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
 // Calculate the normal vector at a triangle
-glm::vec3 calculate_surface_normal(glm::uvec3& triangle, std::vector<Vertex>& vertices)
+glm::vec3 calculate_surface_normal(glm::uvec3& triangle, 
+    std::vector<Vertex>& vertices)
 {
     glm::vec3 normal;
 
@@ -199,7 +201,8 @@ glm::vec3 calculate_surface_normal(glm::uvec3& triangle, std::vector<Vertex>& ve
 }
 
 // Find list of normals of each triangle
-std::vector<Ray> find_normals(std::vector<Vertex>& vertices, std::vector<glm::uvec3>& triangles)
+std::vector<Ray> find_normals(std::vector<Vertex>& vertices, 
+    std::vector<glm::uvec3>& triangles)
 {
     // Find the center of the mesh
     std::vector<glm::vec3> positions;
@@ -231,7 +234,9 @@ std::vector<Ray> find_normals(std::vector<Vertex>& vertices, std::vector<glm::uv
     return normals;
 }
 
-glm::vec3 vertex_normal(int i, std::map<int, std::vector<int>>& vertexToTri, std::vector<Ray>& normals) 
+glm::vec3 vertex_normal(int i, 
+    std::map<int, std::vector<int>>& vertexToTri, 
+    std::vector<Ray>& normals) 
 {
     glm::vec3 N; 
 
@@ -264,6 +269,7 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
         // If the vertex should be excluded
         if (vertices[i].exclude)
             continue; 
+
         // Retrieve current vertex and voronoi area 
         Vertex& currentVertex = vertices[i]; 
         glm::vec3 n = vertex_normal(i, vertexToTri, normals); 
@@ -274,9 +280,7 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
 
         // Mean Curvature 
         glm::vec3 laPlace = find_mean_curvature(currentVertex, vertices, A_i);
-       // double H = glm::dot(laPlace, n) >= 0 ? (1.0 / (4 * A_i)) * glm::length(laPlace) : (-1.0 / (4 * A_i)) * glm::length(laPlace); 
         double H =  (1.0 / (4 * A_i)) * glm::length(laPlace); 
-        std::cout << "H: " << H << std::endl; 
         
         // Correct for round-off errors 
         K_g = std::abs(K_g) < EPS ? 0.0 : K_g; 
@@ -285,15 +289,9 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
         // Calculate principle curvatures k_1 and k_2 (+ apply thresholding)
         double k1 = H + sqrt(std::max(0.0, H * H - K_g)); 
         double k2 = H - sqrt(std::max(0.0, H * H - K_g));
-
-        // Print for debugging 
-        /* std::cout << "Voronoi Area: " << A_i << std::endl; 
-        std::cout << "K_g: " << K_g << std::endl;
-        std::cout << "H: " << H << std::endl; 
-        std::cout << "K1: " << k1 << std::endl;
-        std::cout << "K2: " << k2 << std::endl;*/ 
        
-        double vertexCurvature = (0.5 * (k1 + k2));   
+        double vertexCurvature = glm::dot(n, laPlace) >= 0 ? (0.5 * (k1 + k2)) : (-0.5 * (k1 + k2));   
+        double indexedCurvature = (vertexCurvature / k_reg); 
 
         currentVertex.setCurvature(vertexCurvature); 
         curvature += vertexCurvature; 
@@ -307,7 +305,9 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
 }
 
 // Calculates the heat color at a particular vertex using the curvature value
-glm::vec3 heat_color_calculation(const Vertex& vertex, double min, double max) {
+glm::vec3 heat_color_calculation(const Vertex& vertex, 
+    double min, 
+    double max) {
     // Uniform curvature
     if (max - min < 1e-6)
         return glm::vec3(0.0f, 1.0f, 0.0f); 
