@@ -26,7 +26,7 @@ DISABLE_WARNINGS_POP()
 #include <Windows.h>
 #include <GL/glu.h>
 #include "util.h" 
-
+#include <framework/ray.h>
 
 // TODO: Make this work with colours for different curvature 
 void drawMeshWithColors(const Mesh& mesh, std::vector<glm::vec3> colors)
@@ -90,8 +90,6 @@ void draw_sphere(const glm::vec3& center, float radius, const glm::vec3& color)
     draw_sphere_internal(center, radius);
     glPopAttrib();
 }
-// */ 
-
 
 void draw_regions(std::vector<Vertex>& vertices)
 {
@@ -117,5 +115,28 @@ void draw_regions(std::vector<Vertex>& vertices)
                 draw_sphere(v.position, 1e-2f, color.c6);
                 continue;
         } 
+    }
+}
+
+// Draws a ray, mostly used for checking surface normals 
+void drawRay(const Ray& ray, const glm::vec3& color)
+{
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    glDisable(GL_LIGHTING);
+    glBegin(GL_LINES);
+    const glm::vec3 hitPoint = ray.origin + std::clamp(ray.t, 0.0f, 100.0f) * ray.direction;
+
+    glColor3fv(glm::value_ptr(color));
+    glVertex3fv(glm::value_ptr(ray.origin));
+    glColor3fv(glm::value_ptr(color));
+    glVertex3fv(glm::value_ptr(hitPoint));
+    glEnd();
+    glPopAttrib();
+}
+
+void draw_normal_rays(std::vector<Ray>& normals)
+{
+    for (auto& r : normals) {
+        drawRay(r, glm::vec3(1, 0, 0)); 
     }
 }

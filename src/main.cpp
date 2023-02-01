@@ -13,6 +13,7 @@ DISABLE_WARNINGS_POP()
 #include <array>
 #include <framework/mesh.h>
 #include <framework/trackball.h>
+#include <framework/ray.h>
 #include <framework/window.h>
 #include <iostream>
 #include <span>
@@ -316,13 +317,13 @@ void set_regional(RVInfo& info, std::vector<Vertex>& vertices) {
 */
 int main(int argc, char** argv)
 {
-    Window window { "RV Beutel Visualisation", glm::ivec2(800), OpenGLVersion::GL2 };
+    Window window { "RV Beutel Visualisation", glm::ivec2(1000), OpenGLVersion::GL2 };
     std::string fileName = "ref.obj ";
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt"; 
     std::string regions = "region.txt"; 
     bool scaleNeeded = true;
-    bool showRegions = true; 
+    bool showRegions = false; 
 
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
     trackball.disableTranslation();
@@ -332,6 +333,7 @@ int main(int argc, char** argv)
     std::ifstream ifile;
     ifile.open(std::filesystem::path(DATA_DIR) / fileName);
     Mesh rv = loadMeshRV(ifile);
+    center_mesh(rv.vertices); 
 
     // Initialise the rings over the vertices
     loadRingFromFile(ring, rv.vertices); 
@@ -364,16 +366,16 @@ int main(int argc, char** argv)
     // Display heat colours
     std::vector<glm::vec3> vertexColors = heat_color(rv.triangles, rv.vertices, rv.vertexToTri); 
 
+    if (scaleNeeded) {
+        scale_mesh(state.myMesh.vertices);
+    }   
+    set_regional(info, rv.vertices); // set regional curvature 
+
     window.registerCharCallback([&](unsigned unicodeCodePoint) {
         keyboard(static_cast<unsigned char>(unicodeCodePoint), state, window, trackball);
     });
-
-    if (scaleNeeded) {
-        scale(state.myMesh.vertices);
-    }   
-
-    set_regional(info, rv.vertices); 
-
+    std::vector<Ray> normals = find_normals(state.myMesh.vertices, state.myMesh.triangles);
+    
     while (!window.shouldClose()) {
         window.updateInput();
         glViewport(0, 0, window.getFrameBufferSize().x, window.getFrameBufferSize().y);
@@ -383,6 +385,8 @@ int main(int argc, char** argv)
 
         draw(state, trackball, vertexColors);
         drawUI(state, trackball, info);
+      //  draw_normal_rays(normals); 
+
         if (showRegions) {
             draw_regions(state.myMesh.vertices); 
         }
