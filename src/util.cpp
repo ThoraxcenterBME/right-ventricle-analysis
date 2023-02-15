@@ -257,14 +257,40 @@ glm::vec3 vertex_normal(int i,
     std::map<int, std::vector<int>>& vertexToTri, 
     std::vector<Ray>& normals) 
 {
-    glm::vec3 N; 
+    glm::vec3 normal_vec = glm::vec3(0, 0, 0); 
 
     // Sum the normals of the surrounding triangles
     for (int t : vertexToTri[i]) {
-        N += normals[t].direction; 
+        normal_vec = normal_vec + normals[t].direction;
     }
 
-    return glm::normalize(N); 
+    return normal_vec; 
+}
+
+// Find the LaPlace rays in order to draw them 
+std::vector<Ray> findLaplaceRays(std::vector<glm::uvec3>& triangles,
+    std::vector<Vertex>& vertices,
+    std::map<int, std::vector<int>>& vertexToTri)
+{
+   
+    std::vector<Ray> laplace = {};
+
+    for (int i = 0; i < vertices.size(); i++) {
+        // If the vertex should be excluded
+        if (vertices[i].exclude)
+            continue;
+
+        // Retrieve current vertex and voronoi area
+        Vertex& currentVertex = vertices[i];
+        // Find voronoi area A_i 
+        double A_i = find_voronoi_area(currentVertex, vertices);
+        // Mean Curvature
+        glm::vec3 K_x = find_mean_curvature(currentVertex, vertices, A_i);
+
+        laplace.push_back(Ray { currentVertex.position, glm::normalize(K_x), 0.1f } ); 
+    }
+
+    return laplace; 
 }
 
 /*
@@ -293,7 +319,7 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
         Vertex& currentVertex = vertices[i]; 
         glm::vec3 n = vertex_normal(i, vertexToTri, normals); 
 
-        // Find Gaussian curvature K_g and mean curvature H 
+        // Find Gaussian curvature K_g and voronoi region A_i
         double A_i = find_voronoi_area(currentVertex, vertices); 
         double k_G = find_gaussian_curvature(currentVertex, vertices, A_i); 
 

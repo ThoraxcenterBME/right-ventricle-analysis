@@ -140,3 +140,10 @@ void draw_normal_rays(std::vector<Ray>& normals)
         drawRay(r, glm::vec3(1, 0, 0)); 
     }
 }
+
+void draw_laplace_rays(std::vector<Ray>& laplace)
+{
+    for (auto& r : laplace) {
+        drawRay(r, glm::vec3(0, 0, 0));
+    }
+}

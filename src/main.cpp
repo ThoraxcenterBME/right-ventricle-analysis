@@ -339,9 +339,9 @@ void set_regional(RVInfo& info, std::vector<Vertex>& vertices) {
 int main(int argc, char** argv)
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(1000), OpenGLVersion::GL2 };
-    std::string fileName = "large-sphere.obj";
+    std::string fileName = "ref.obj";
 
-    std::string ring = "ring-large.txt"; // ring-indices, ring-sphere ring-large
+    std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt"; 
     std::string regions = "region.txt"; 
 
@@ -349,7 +349,7 @@ int main(int argc, char** argv)
     trackball.disableTranslation();
     printHelp();
 
-    // Load the mesh file and ring file 
+    // Load the mesh file and ring file
     std::ifstream ifile;
     ifile.open(std::filesystem::path(DATA_DIR) / fileName);
     Mesh rv = loadMeshRV(ifile);

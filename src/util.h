@@ -21,3 +21,4 @@ void scale_mesh(std::vector<Vertex>& vertices);
 std::vector<double> find_regional_curvature(std::vector<Vertex>& vertices); 
 void center_mesh(std::vector<Vertex>& vertices); 
 std::vector<Ray> find_normals(std::vector<Vertex>& vertices, std::vector<glm::uvec3>& triangles); 
+std::vector<Ray> findLaplaceRays(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& vertices, std::map<int, std::vector<int>>& vertexToTri);
