@@ -8,7 +8,7 @@
 #include <map>
 #include <math.h>
 #include <numeric>
-constexpr auto EPS = 1e-7;
+constexpr auto EPS = 1e-6;
 constexpr auto M_PI = 3.14159265358979323846; 
  
 
@@ -64,9 +64,27 @@ bool is_obtuse(Vertex& currentVertex,
     return cosine_i < 0 || cosine_j < 0 || cosine_p < 0; 
 }
 
+// Computes the mixed Voronoi region area for a triangle 
+double mixed_voronoi(Vertex& currentVertex, 
+    Vertex& q, 
+    Vertex& r) {
+    // |PR|^2 * cotQ 
+    double pr_norm = glm::length(r.position - currentVertex.position); 
+    glm::vec3 a_1 = currentVertex.position - q.position; 
+    glm::vec3 b_1 = r.position - q.position; 
+    double t_1 = (pr_norm * pr_norm) * (glm::dot(a_1, b_1) / glm::length(glm::cross(a_1, b_1))); 
+
+    // |PQ|^2 * cotR
+    double pq_norm = glm::length(q.position - currentVertex.position); 
+    glm::vec3 a_2 = currentVertex.position - r.position; 
+    glm::vec3 b_2 = q.position - r.position; 
+    double t_2 = (pq_norm * pq_norm) * (glm::dot(a_2, b_2) / glm::length(glm::cross(a_2, b_2))); 
+
+    return 0.125 * (t_1 + t_2); 
+}
 
 // Computes mixed voronoi region area for a triangle
-double mixed_voronoi(Vertex& currentVertex,
+double mixed_voronoi_old(Vertex& currentVertex,
     Vertex& j, 
     Vertex& p,
     Vertex& q) 
@@ -103,7 +121,8 @@ double find_voronoi_area(Vertex& currentVertex,
 
         // Non-obtuse, can use Voronoi
         if (!is_obtuse(currentVertex, j, p)) {
-            A_i += mixed_voronoi(currentVertex, j, p, q); 
+            // Pass additional vertex previous vertex (q) for the older implementation 
+            A_i += mixed_voronoi(currentVertex, j, p); 
         } else { // Don't use Voronoi with obtuse angles
             double cosine_i = glm::dot(glm::normalize(j.position - currentVertex.position), glm::normalize(p.position - currentVertex.position));
             double area_T = 0.5 * glm::length(glm::cross(j.position - currentVertex.position, p.position - currentVertex.position)); 
@@ -175,7 +194,7 @@ glm::vec3 find_mean_curvature(Vertex& currentVertex,
         laPlace += (float)(alphaWeight + betaWeight) * (currentVertex.position - j.position);
     }
 
-    return laPlace; 
+    return (1.0f / (2 * A_i)) * laPlace; 
 }
 
 
@@ -276,21 +295,24 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
 
         // Find Gaussian curvature K_g and mean curvature H 
         double A_i = find_voronoi_area(currentVertex, vertices); 
-        double K_g = find_gaussian_curvature(currentVertex, vertices, A_i); 
+        double k_G = find_gaussian_curvature(currentVertex, vertices, A_i); 
 
         // Mean Curvature 
-        glm::vec3 laPlace = find_mean_curvature(currentVertex, vertices, A_i);
-        double H =  (1.0 / (4 * A_i)) * glm::length(laPlace); 
+        glm::vec3 K_x = find_mean_curvature(currentVertex, vertices, A_i);
+
+        // Determine the sign of mean curvature 
+        glm::vec3 H = 0.5f * K_x; 
+        double k_H = glm::dot(n, H) >= 0 ? glm::length(H) : (-1 * glm::length(H)); 
         
         // Correct for round-off errors 
-        K_g = std::abs(K_g) < EPS ? 0.0 : K_g; 
-        H = std::abs(H) < EPS ? 0.0 : H; 
+        k_G = std::abs(k_G) < EPS ? 0.0 : k_G; 
+        k_H = std::abs(k_H) < EPS ? 0.0 : k_H; 
            
         // Calculate principle curvatures k_1 and k_2 (+ apply thresholding)
-        double k1 = H + sqrt(std::max(0.0, H * H - K_g)); 
-        double k2 = H - sqrt(std::max(0.0, H * H - K_g));
+        double k1 = k_H + sqrt(std::max(0.0, k_H * k_H - k_G)); 
+        double k2 = k_H - sqrt(std::max(0.0, k_H * k_H - k_G));
        
-        double vertexCurvature = glm::dot(n, laPlace) >= 0 ? (0.5 * (k1 + k2)) : (-0.5 * (k1 + k2));   
+        double vertexCurvature = 0.5 * (k1 + k2); 
         double indexedCurvature = (vertexCurvature / k_reg); 
 
         currentVertex.setCurvature(vertexCurvature); 
