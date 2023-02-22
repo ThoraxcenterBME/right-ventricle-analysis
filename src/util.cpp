@@ -8,6 +8,7 @@
 #include <map>
 #include <math.h>
 #include <numeric>
+#include <set>
 constexpr auto EPS = 1e-6;
 constexpr auto M_PI = 3.14159265358979323846; 
  
@@ -20,18 +21,17 @@ double find_volume(std::vector<glm::uvec3>& triangles,
     double volume = 0.0;
 
     for (int i = 0; i < triangles.size(); i++) {
-        glm::uvec3 triangle = triangles[i];
+        auto& triangle = triangles[i];
 
-        Vertex& p1 = vertices[triangle[0]];
-        Vertex& p2 = vertices[triangle[1]];
-        Vertex& p3 = vertices[triangle[2]];
+        auto& p1 = vertices[triangle[0]];
+        auto& p2 = vertices[triangle[1]];
+        auto& p3 = vertices[triangle[2]];
 
         volume += (1.0 / 6.0) * (-p3.position[0] * p2.position[1] * p1.position[2] + p2.position[0] * p3.position[1] * p1.position[2] + p3.position[0] * p1.position[1] * p2.position[2] - p1.position[0] * p3.position[1] * p2.position[2] - p2.position[0] * p1.position[1] * p3.position[2] + p1.position[0] * p2.position[1] * p3.position[2]);
     }
     
     return abs(volume) / 1000;
 }
-
 
 // Calculates surface area of the mesh 
 double find_surface_area(std::vector<glm::uvec3>& triangles, 
@@ -40,10 +40,10 @@ double find_surface_area(std::vector<glm::uvec3>& triangles,
     double sa = 0.0; 
 
     for (int i = 0; i < triangles.size(); i++) {
-        glm::uvec3 triangle = triangles[i];
+        auto& triangle = triangles[i];
 
-        glm::vec3 a = vertices[triangle[1]].position - vertices[triangle[0]].position; 
-        glm::vec3 b = vertices[triangle[2]].position - vertices[triangle[0]].position; 
+        auto a = vertices[triangle[1]].position - vertices[triangle[0]].position; 
+        auto b = vertices[triangle[2]].position - vertices[triangle[0]].position; 
 
         sa += glm::length(glm::cross(a, b)); 
     }
@@ -51,6 +51,81 @@ double find_surface_area(std::vector<glm::uvec3>& triangles,
     return 0.5 * sa; 
 }
 
+
+void add_all_to_region(std::set<int>& region,
+    std::vector<int>& ring)
+{
+    for (auto& r : ring) {
+        region.insert(r);
+    }
+}
+
+
+// Calculates surface area of a region
+double find_surface_area_regional(std::vector<glm::uvec3>& triangles,
+    std::vector<Vertex>& vertices, 
+    std::set<int> region)
+{
+    double sa = 0.0;
+
+    for (auto& i : region) {
+        auto& triangle = triangles[i];
+
+        auto a = vertices[triangle[1]].position - vertices[triangle[0]].position;
+        auto b = vertices[triangle[2]].position - vertices[triangle[0]].position;
+
+        sa += glm::length(glm::cross(a, b));
+    }
+
+    return 0.5 * sa;
+}
+
+std::vector<double> regional_volumes(std::vector<Vertex>& vs,
+    std::vector<glm::uvec3>& ts,
+    std::map<int, std::vector<int>>& vertexToTri)
+{
+    std::set<int> it_region = {};
+    std::set<int> ot_region = {};
+    std::set<int> sb_region = {};
+    std::set<int> fb_region = {};
+    std::set<int> sa_region = {};
+    std::set<int> fa_region = {};
+
+    for (auto& v : vs) {
+        auto& ring = vertexToTri[v.index];
+        switch (v.region) {
+        case Region::IT:
+            add_all_to_region(it_region, ring);
+            break;
+        case Region::OT:
+            add_all_to_region(ot_region, ring);
+            break;
+        case Region::SB:
+            add_all_to_region(sb_region, ring);
+            break;
+        case Region::FB:
+            add_all_to_region(fb_region, ring);
+            break;
+        case Region::SA:
+            add_all_to_region(sa_region, ring);
+            break;
+        case Region::FA:
+            add_all_to_region(fa_region, ring);
+            break;
+        }
+    }
+
+    double ratio_scale = find_volume(ts, vs) / find_surface_area(ts, vs);
+
+    double v_reg_it = ratio_scale * find_surface_area_regional(ts, vs, it_region);
+    double v_reg_ot = ratio_scale * find_surface_area_regional(ts, vs, ot_region);
+    double v_reg_sb = ratio_scale * find_surface_area_regional(ts, vs, sb_region);
+    double v_reg_fb = ratio_scale * find_surface_area_regional(ts, vs, fb_region);
+    double v_reg_sa = ratio_scale * find_surface_area_regional(ts, vs, sa_region);
+    double v_reg_fa = ratio_scale * find_surface_area_regional(ts, vs, fa_region);
+
+    return { v_reg_it, v_reg_ot, v_reg_sb, v_reg_fb, v_reg_sa, v_reg_fa };
+}
 
 // Checks whether a triangle has an obtuse angle 
 bool is_obtuse(Vertex& currentVertex,
@@ -293,6 +368,22 @@ std::vector<Ray> findLaplaceRays(std::vector<glm::uvec3>& triangles,
     return laplace; 
 }
 
+
+void set_indexed_curvature(std::vector<glm::uvec3>& triangles,
+    std::vector<Vertex>& vertices,
+    std::map<int, std::vector<int>>& vertexToTri)
+{
+    // Calculate the regional volumes 
+    auto regional_vols = regional_volumes(vertices, triangles, vertexToTri); 
+
+    for (auto& v : vertices) {
+        double k_reg = std::cbrt(4 * M_PI / (3 * regional_vols[(int)v.region]));
+
+        v.set_index_curv(v.curvature / k_reg); 
+    }
+}
+
+
 /*
 * Calculates the global curvature of a mesh
 * Sources:
@@ -306,8 +397,6 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
 {
     int vertices_count = 0; 
     double curvature = 0.0; 
-    double volume = find_volume(triangles, vertices); 
-    double k_reg = std::cbrt((4 * M_PI) / (3 * volume));     
     std::vector<Ray> normals = find_normals(vertices, triangles); 
 
     for (int i = 0; i < vertices.size(); i++) {
@@ -339,7 +428,6 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
         double k2 = k_H - sqrt(std::max(0.0, k_H * k_H - k_G));
        
         double vertexCurvature = 0.5 * (k1 + k2); 
-        double indexedCurvature = (vertexCurvature / k_reg); 
 
         currentVertex.setCurvature(vertexCurvature); 
         curvature += vertexCurvature; 
@@ -348,6 +436,9 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
 
     // Average the curvature 
     curvature /= vertices_count; 
+
+    // Set index curvature values 
+    set_indexed_curvature(triangles, vertices, vertexToTri); 
     
     return curvature; 
 }
@@ -364,7 +455,7 @@ glm::vec3 heat_color_calculation(const Vertex& vertex,
     }
 
     glm::vec3 c = glm::vec3(0.0f); 
-    float scaledCurvature = (vertex.curvature - min) / (max - min); 
+    float scaledCurvature = (vertex.indexed_curv - min) / (max - min); 
 
     if (scaledCurvature < 0.25) {
         scaledCurvature *= 4.0;
@@ -383,14 +474,15 @@ glm::vec3 heat_color_calculation(const Vertex& vertex,
     return c; 
 }
 
+
 // Find minimum and maximum curvature 
 std::pair<double, double> find_min_max(std::vector<Vertex>& vertices) {
     double min = 100000; 
     double max = -100000; 
 
     for (auto v : vertices) {
-        min = std::min(v.curvature, min); 
-        max = std::max(v.curvature, max); 
+        min = std::min(v.indexed_curv, min); 
+        max = std::max(v.indexed_curv, max); 
     }
 
     std::pair<double, double> minMax = {};
@@ -440,28 +532,28 @@ std::vector<double> find_regional_curvature(std::vector<Vertex>& vertices)
             continue; 
 
         switch (v.region) {
-        case 1:
-            cn_1.first += v.curvature; 
+        case Region::IT:
+            cn_1.first += v.indexed_curv; 
             cn_1.second++; 
             continue;
-        case 2:
-            cn_2.first += v.curvature;
+        case Region::OT:
+            cn_2.first += v.indexed_curv;
             cn_2.second++; 
             continue;
-        case 3:
-            cn_3.first += v.curvature;
+        case Region::SB:
+            cn_3.first += v.indexed_curv;
             cn_3.second++; 
             continue;
-        case 4:
-            cn_4.first += v.curvature;
+        case Region::FB:
+            cn_4.first += v.indexed_curv;
             cn_4.second++; 
             continue;
-        case 5:
-            cn_5.first += v.curvature;
+        case Region::SA:
+            cn_5.first += v.indexed_curv;
             cn_5.second++; 
             continue;
-        case 6:
-            cn_6.first += v.curvature;
+        case Region::FA:
+            cn_6.first += v.indexed_curv;
             cn_6.second++; 
             continue;
         }

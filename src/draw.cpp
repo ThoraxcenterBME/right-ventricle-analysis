@@ -96,22 +96,22 @@ void draw_regions(std::vector<Vertex>& vertices)
     ColorRegion color; 
     for (Vertex& v : vertices) {
         switch (v.region) {
-            case 1: 
+            case Region::IT: 
                 draw_sphere(v.position, 1e-2f, color.c1); 
                 continue; 
-            case 2: 
+            case Region::OT: 
                 draw_sphere(v.position, 1e-2f, color.c2);
                 continue;
-            case 3:
+            case Region::SB:
                 draw_sphere(v.position, 1e-2f, color.c3);
                 continue; 
-            case 4:
+            case Region::FB:
                 draw_sphere(v.position, 1e-2f, color.c4);
                 continue;  
-            case 5:
+            case Region::SA:
                 draw_sphere(v.position, 1e-2f, color.c5);
                 continue;
-            case 6:
+            case Region::FA:
                 draw_sphere(v.position, 1e-2f, color.c6);
                 continue;
         } 
