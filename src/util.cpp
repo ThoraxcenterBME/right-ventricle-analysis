@@ -504,8 +504,8 @@ std::vector<glm::vec3> heat_color(std::vector<glm::uvec3>& triangles,
         colors.push_back(heat_color_calculation(v, minMax.first, minMax.second));
     }
 
-    std::cout << "min: " << minMax.first << std::endl; 
-    std::cout << "max: " << minMax.second << std::endl; 
+    printf(" %.5f, %.5f \n" , minMax.first, minMax.second); 
+
     return colors; 
 }
 
@@ -559,14 +559,18 @@ std::vector<double> find_regional_curvature(std::vector<Vertex>& vertices)
         }
     }
 
-    return { cn_1.first / cn_1.second, 
-        cn_2.first / cn_2.second, 
-        cn_3.first / cn_3.second, 
-        cn_4.first / cn_4.second, 
+    std::vector<double> r_vals = {
+        cn_1.first / cn_1.second,
+        cn_2.first / cn_2.second,
+        cn_3.first / cn_3.second,
+        cn_4.first / cn_4.second,
         cn_5.first / cn_5.second,
         cn_6.first / cn_6.second,
     }; 
 
+    printf(" %.5f, %.5f, %.5f, %.5f, %.5f, %.5f, ", r_vals[0], r_vals[1], r_vals[2], r_vals[3], r_vals[4], r_vals[5]); 
+
+    return r_vals; 
 }
 
 // Center mesh
