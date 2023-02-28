@@ -82,6 +82,17 @@ struct RVInfo {
     float region6; 
 };
 
+struct PrintInfo {
+    float volume;
+    float surface_area;
+    float curvature;
+    float min_curv; 
+    float max_curv; 
+    std::vector<double> curvatures; 
+    std::vector<double> volumes; 
+    std::vector<double> surface_areas; 
+};
+
 glm::vec3 computeLighting(const ProgramState& programState, unsigned vertexIndex, const glm::vec3& cameraPos, const Light& light)
 {
     const auto& vertex = programState.myMesh.vertices[vertexIndex];
@@ -333,22 +344,94 @@ void set_regional(RVInfo& info, std::vector<Vertex>& vertices) {
     info.region6 = curvatures[5];
 }
 
-/*
-* This main function would be to plot the RV beutel 
+void print_array_csv(std::vector<double>& values) {
+    for (auto& v : values) {
+        printf("% f,", v);
+    }
+}
+
+void print_info_csv(PrintInfo info) {
+    printf("%f , %f, %f, ", info.volume, info.surface_area, info.curvature);
+
+    print_array_csv(info.volumes); 
+    print_array_csv(info.surface_areas); 
+    print_array_csv(info.curvatures); 
+}
+
+std::string construct_file_string(int n) {
+    if (n / 10 < 1) {
+        return "Young healthy volunteer_00" + std::to_string(n) + ".obj";
+    } else {
+        return "Young healthy volunteer_0" + std::to_string(n) + ".obj";
+    }
+}
+
+    /*
+* This main function for calculations
 */
-int main(int argc, char** argv)
+int main_calculations()
 {
-    Window window { "RV Beutel Visualisation", glm::ivec2(1000), OpenGLVersion::GL2 };
-    std::string fileName = "ref.obj";
+    std::string fileName;
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt"; 
-    std::string regions = "region.txt"; 
+    std::string regions = "region.txt";
+
+    for (int i = 0; i <= 38; i++) {
+        printf("%d, ", i); 
+        fileName = construct_file_string(i); 
+        // Load the mesh file and ring file
+        std::ifstream ifile;
+        ifile.open(std::filesystem::path(DATA_DIR) / fileName);
+        Mesh rv = loadMeshRV(ifile);
+        loadRingFromFile(ring, rv.vertices);
+
+        // Printing Info for CSV file
+        PrintInfo print_info = {}; 
+
+        // Extra processing needed for RV Beutel
+        if (rv.vertices.size() > 937) {
+            center_mesh(rv.vertices);
+            mark_excluded(exclude_vertices, rv.vertices);
+            mark_regions(regions, rv.vertices);
+           // scale_mesh(state.myMesh.vertices);
+            // center_mesh(state.myMesh.vertices);
+          //  mark_regions(regions, state.myMesh.vertices);
+        }
+
+        // Calculate global quantities 
+        print_info.volume = find_volume(rv.triangles, rv.vertices);
+        print_info.surface_area = find_surface_area(rv.triangles, rv.vertices);
+        print_info.curvature = find_curvature(rv.triangles, rv.vertices, rv.vertexToTri);
+
+        // Calculate regional quantities 
+        print_info.curvatures = find_regional_curvature(rv.vertices);
+        print_info.volumes = regional_volumes(rv.vertices, rv.triangles, rv.vertexToTri); 
+        print_info.surface_areas = regional_surface_areas(rv.vertices, rv.triangles, rv.vertexToTri); 
+
+        print_info_csv(print_info); 
+        heat_color(rv.triangles, rv.vertices, rv.vertexToTri);
+       // printf("\n"); 
+    }
+    return 0; 
+}
+
+/*
+ * This main function would be to plot the RV beutel
+ */
+int main_visual()
+{
+    Window window { "RV Beutel Visualisation", glm::ivec2(1000), OpenGLVersion::GL2 };
+    std::string fileName = "Young healthy volunteer_011.obj";
+
+    std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
+    std::string exclude_vertices = "exclude.txt";
+    std::string regions = "region.txt";
 
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
     trackball.disableTranslation();
     printHelp();
 
-    // Load the mesh file and ring file 
+    // Load the mesh file and ring file
     std::ifstream ifile;
     ifile.open(std::filesystem::path(DATA_DIR) / fileName);
     Mesh rv = loadMeshRV(ifile);
@@ -357,7 +440,7 @@ int main(int argc, char** argv)
     // ImGUI lights
     ProgramState state {};
     state.myMesh = rv;
-    // Extra processing needed for RV Beutel 
+    // Extra processing needed for RV Beutel
     if (rv.vertices.size() > 937) {
         center_mesh(rv.vertices);
         mark_excluded(exclude_vertices, rv.vertices);
@@ -367,31 +450,30 @@ int main(int argc, char** argv)
         mark_regions(regions, state.myMesh.vertices);
     }
 
-    state.materialInformation.Kd = glm::vec3(75, 139, 59) / 255.0f;
-    state.materialInformation.Ks = glm::vec3(221, 42, 116) / 255.0f;
-    state.materialInformation.shininess = 20.0f;
-    meshFlipZ(state.myMesh);
-    float lp = .85f;
-    state.lights.push_back(Light { glm::vec3(lp, lp, lp), glm::vec3(224, 215, 73) / 255.0f });
-    state.lights.push_back(Light { glm::vec3(-lp, lp, lp), glm::vec3(224, 215, 73) / 255.0f });
-    state.lights.push_back(Light { glm::vec3(lp, -lp, lp), glm::vec3(224, 215, 73) / 255.0f });
-    state.lights.push_back(Light { glm::vec3(lp, lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
-    state.lights.push_back(Light { glm::vec3(-lp, -lp, lp), glm::vec3(224, 215, 73) / 255.0f });
-    state.lights.push_back(Light { glm::vec3(lp, -lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
-    state.lights.push_back(Light { glm::vec3(-lp, lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
-    state.lights.push_back(Light { glm::vec3(-lp, -lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
+     state.materialInformation.Kd = glm::vec3(75, 139, 59) / 255.0f;
+     state.materialInformation.Ks = glm::vec3(221, 42, 116) / 255.0f;
+     state.materialInformation.shininess = 20.0f;
+     meshFlipZ(state.myMesh);
+     float lp = .85f;
+     state.lights.push_back(Light { glm::vec3(lp, lp, lp), glm::vec3(224, 215, 73) / 255.0f });
+     state.lights.push_back(Light { glm::vec3(-lp, lp, lp), glm::vec3(224, 215, 73) / 255.0f });
+     state.lights.push_back(Light { glm::vec3(lp, -lp, lp), glm::vec3(224, 215, 73) / 255.0f });
+     state.lights.push_back(Light { glm::vec3(lp, lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
+     state.lights.push_back(Light { glm::vec3(-lp, -lp, lp), glm::vec3(224, 215, 73) / 255.0f });
+     state.lights.push_back(Light { glm::vec3(lp, -lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
+     state.lights.push_back(Light { glm::vec3(-lp, lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
+     state.lights.push_back(Light { glm::vec3(-lp, -lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
 
-    
     // Calculate the actual volume captured by mesh
     RVInfo info {};
     info.volume = find_volume(rv.triangles, rv.vertices);
-    info.surfaceArea = find_surface_area(rv.triangles, rv.vertices); 
+    info.surfaceArea = find_surface_area(rv.triangles, rv.vertices);
     info.curvature = find_curvature(rv.triangles, rv.vertices, rv.vertexToTri);
-    info.radius = rv.radius; 
+    info.radius = rv.radius;
 
-    // GUI (Visual Debug) features 
-    std::vector<glm::vec3> vertexColors = heat_color(rv.triangles, rv.vertices, rv.vertexToTri);
+    // GUI (Visual Debug) features
     set_regional(info, rv.vertices);
+    std::vector<glm::vec3> vertexColors = heat_color(rv.triangles, rv.vertices, rv.vertexToTri);
     std::vector<Ray> normals = find_normals(state.myMesh.vertices, state.myMesh.triangles);
 
     // Window Pop-up
@@ -408,7 +490,15 @@ int main(int argc, char** argv)
 
         draw(state, trackball, vertexColors);
         drawUI(state, trackball, info, normals);
-       
+
         window.swapBuffers();
     }
+
+    return 0; 
+}
+
+
+int main(int argc, char** argv)
+{
+    main_calculations();
 }

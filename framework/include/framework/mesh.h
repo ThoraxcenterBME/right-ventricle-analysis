@@ -12,6 +12,11 @@ DISABLE_WARNINGS_POP()
 #include <vector>
 #include <map>
 
+// Enumerated type for indicating the region the vertex belongs to 
+enum Region {
+	IT=0, OT=1, SB=2, FB=3, SA=4, FA=5
+};
+
 struct Vertex {
 	glm::vec3 position;
 	glm::vec3 normal;
@@ -29,8 +34,8 @@ struct Vertex {
 	}
     bool exclude = false; // whether it should be excluded in the curvature calculation
 	[[nodiscard]] constexpr bool operator==(const Vertex&) const noexcept = default;
-    int region; 
-	void set_region(int r) {
+    Region region;  
+	void set_region(Region r) {
 		region = r; 
 	}
 };

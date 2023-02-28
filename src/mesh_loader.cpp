@@ -189,34 +189,34 @@ void mark_regions(std::string& in, std::vector<Vertex>& vertices)
         int key; 
         lines >> key; 
 
-        // Inflow Tract = 1 
+        // Inflow Tract
         if (lineType == "it") {
-            vertices[key].set_region(1); 
+            vertices[key].set_region(Region::IT); 
             continue; 
         }
-        // Outflow Tract = 2
+        // Outflow Tract
         if (lineType == "ot") {
-            vertices[key].set_region(2);
+            vertices[key].set_region(Region::OT);
             continue; 
         }
-        // Septal Body = 3
+        // Septal Body
         if (lineType == "sb") {
-            vertices[key].set_region(3);
+            vertices[key].set_region(Region::SB);
             continue; 
         }
-        // Free wall Body = 4 
+        // Free wall Body
         if (lineType == "fb") {
-            vertices[key].set_region(4);
+            vertices[key].set_region(Region::FB);
             continue; 
         }
-        // Septal Apex = 5
+        // Septal Apex
         if (lineType == "sa") {
-            vertices[key].set_region(5);
+            vertices[key].set_region(Region::SA);
             continue; 
         }
-        // Free-wall Apex = 6 
+        // Free-wall Apex
         if (lineType == "fa") {
-            vertices[key].set_region(6);
+            vertices[key].set_region(Region::FA);
             continue; 
         }
     }
