@@ -127,6 +127,51 @@ std::vector<double> regional_volumes(std::vector<Vertex>& vs,
     return { v_reg_it, v_reg_ot, v_reg_sb, v_reg_fb, v_reg_sa, v_reg_fa };
 }
 
+std::vector<double> regional_surface_areas(std::vector<Vertex>& vs,
+    std::vector<glm::uvec3>& ts,
+    std::map<int, std::vector<int>>& vertexToTri)
+{
+    std::set<int> it_region = {};
+    std::set<int> ot_region = {};
+    std::set<int> sb_region = {};
+    std::set<int> fb_region = {};
+    std::set<int> sa_region = {};
+    std::set<int> fa_region = {};
+
+    for (auto& v : vs) {
+        auto& ring = vertexToTri[v.index];
+        switch (v.region) {
+        case Region::IT:
+            add_all_to_region(it_region, ring);
+            break;
+        case Region::OT:
+            add_all_to_region(ot_region, ring);
+            break;
+        case Region::SB:
+            add_all_to_region(sb_region, ring);
+            break;
+        case Region::FB:
+            add_all_to_region(fb_region, ring);
+            break;
+        case Region::SA:
+            add_all_to_region(sa_region, ring);
+            break;
+        case Region::FA:
+            add_all_to_region(fa_region, ring);
+            break;
+        }
+    }
+
+    double sa_reg_it = find_surface_area_regional(ts, vs, it_region);
+    double sa_reg_ot = find_surface_area_regional(ts, vs, ot_region);
+    double sa_reg_sb = find_surface_area_regional(ts, vs, sb_region);
+    double sa_reg_fb = find_surface_area_regional(ts, vs, fb_region);
+    double sa_reg_sa = find_surface_area_regional(ts, vs, sa_region);
+    double sa_reg_fa = find_surface_area_regional(ts, vs, fa_region);
+
+    return { sa_reg_it, sa_reg_ot, sa_reg_sb, sa_reg_fb, sa_reg_sa, sa_reg_fa };
+}
+
 // Checks whether a triangle has an obtuse angle 
 bool is_obtuse(Vertex& currentVertex,
     Vertex& j, 
@@ -567,8 +612,6 @@ std::vector<double> find_regional_curvature(std::vector<Vertex>& vertices)
         cn_5.first / cn_5.second,
         cn_6.first / cn_6.second,
     }; 
-
-    printf(" %.5f, %.5f, %.5f, %.5f, %.5f, %.5f, ", r_vals[0], r_vals[1], r_vals[2], r_vals[3], r_vals[4], r_vals[5]); 
 
     return r_vals; 
 }

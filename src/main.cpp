@@ -82,6 +82,17 @@ struct RVInfo {
     float region6; 
 };
 
+struct PrintInfo {
+    float volume;
+    float surface_area;
+    float curvature;
+    float min_curv; 
+    float max_curv; 
+    std::vector<double> curvatures; 
+    std::vector<double> volumes; 
+    std::vector<double> surface_areas; 
+};
+
 glm::vec3 computeLighting(const ProgramState& programState, unsigned vertexIndex, const glm::vec3& cameraPos, const Light& light)
 {
     const auto& vertex = programState.myMesh.vertices[vertexIndex];
@@ -333,7 +344,29 @@ void set_regional(RVInfo& info, std::vector<Vertex>& vertices) {
     info.region6 = curvatures[5];
 }
 
-/*
+void print_array_csv(std::vector<double>& values) {
+    for (auto& v : values) {
+        printf("% f,", v);
+    }
+}
+
+void print_info_csv(PrintInfo info) {
+    printf("%f , %f, %f, ", info.volume, info.surface_area, info.curvature);
+
+    print_array_csv(info.volumes); 
+    print_array_csv(info.surface_areas); 
+    print_array_csv(info.curvatures); 
+}
+
+std::string construct_file_string(int n) {
+    if (n / 10 < 1) {
+        return "Young healthy volunteer_00" + std::to_string(n) + ".obj";
+    } else {
+        return "Young healthy volunteer_0" + std::to_string(n) + ".obj";
+    }
+}
+
+    /*
 * This main function for calculations
 */
 int main_calculations()
@@ -343,37 +376,41 @@ int main_calculations()
     std::string exclude_vertices = "exclude.txt"; 
     std::string regions = "region.txt";
 
-    for (int i = 10; i <= 38; i++) {
-        fileName = "Young healthy volunteer_0" + std::to_string(i) + ".obj";
+    for (int i = 0; i <= 38; i++) {
+        printf("%d, ", i); 
+        fileName = construct_file_string(i); 
         // Load the mesh file and ring file
         std::ifstream ifile;
         ifile.open(std::filesystem::path(DATA_DIR) / fileName);
         Mesh rv = loadMeshRV(ifile);
         loadRingFromFile(ring, rv.vertices);
 
-        // ImGUI lights
-        ProgramState state {};
-        state.myMesh = rv;
+        // Printing Info for CSV file
+        PrintInfo print_info = {}; 
+
         // Extra processing needed for RV Beutel
         if (rv.vertices.size() > 937) {
             center_mesh(rv.vertices);
             mark_excluded(exclude_vertices, rv.vertices);
             mark_regions(regions, rv.vertices);
-            scale_mesh(state.myMesh.vertices);
-            center_mesh(state.myMesh.vertices);
-            mark_regions(regions, state.myMesh.vertices);
+           // scale_mesh(state.myMesh.vertices);
+            // center_mesh(state.myMesh.vertices);
+          //  mark_regions(regions, state.myMesh.vertices);
         }
 
-        // Calculate the actual volume captured by mesh
-        RVInfo info {};
-        info.volume = find_volume(rv.triangles, rv.vertices);
-        info.surfaceArea = find_surface_area(rv.triangles, rv.vertices);
-        info.curvature = find_curvature(rv.triangles, rv.vertices, rv.vertexToTri);
-        info.radius = rv.radius;
+        // Calculate global quantities 
+        print_info.volume = find_volume(rv.triangles, rv.vertices);
+        print_info.surface_area = find_surface_area(rv.triangles, rv.vertices);
+        print_info.curvature = find_curvature(rv.triangles, rv.vertices, rv.vertexToTri);
 
-        printf("%d, %.5f, %.5f, ", i, info.volume, info.surfaceArea);
-        set_regional(info, rv.vertices);
+        // Calculate regional quantities 
+        print_info.curvatures = find_regional_curvature(rv.vertices);
+        print_info.volumes = regional_volumes(rv.vertices, rv.triangles, rv.vertexToTri); 
+        print_info.surface_areas = regional_surface_areas(rv.vertices, rv.triangles, rv.vertexToTri); 
+
+        print_info_csv(print_info); 
         heat_color(rv.triangles, rv.vertices, rv.vertexToTri);
+       // printf("\n"); 
     }
     return 0; 
 }
