@@ -421,7 +421,7 @@ int main_calculations()
 int main_visual()
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(1000), OpenGLVersion::GL2 };
-    std::string fileName = "Young healthy volunteer_011.obj";
+    std::string fileName = "Young healthy volunteer_038.obj";
 
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt";
@@ -500,5 +500,5 @@ int main_visual()
 
 int main(int argc, char** argv)
 {
-    main_calculations();
+    main_visual();
 }
