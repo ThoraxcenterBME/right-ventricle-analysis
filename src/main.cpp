@@ -350,10 +350,18 @@ void print_array_csv(std::vector<double>& values) {
     }
 }
 
+
+void print_array_csv_volume(std::vector<double>& values)
+{
+    for (auto& v : values) {
+        printf("% f,", v / 1000);
+    }
+}
+
 void print_info_csv(PrintInfo info) {
     printf("%f , %f, %f, ", info.volume, info.surface_area, info.curvature);
 
-    print_array_csv(info.volumes); 
+    print_array_csv_volume(info.volumes); 
     print_array_csv(info.surface_areas); 
     print_array_csv(info.curvatures); 
 }
@@ -366,7 +374,7 @@ std::string construct_file_string(int n) {
     }
 }
 
-    /*
+/*
 * This main function for calculations
 */
 int main_calculations()
@@ -393,13 +401,10 @@ int main_calculations()
             center_mesh(rv.vertices);
             mark_excluded(exclude_vertices, rv.vertices);
             mark_regions(regions, rv.vertices);
-           // scale_mesh(state.myMesh.vertices);
-            // center_mesh(state.myMesh.vertices);
-          //  mark_regions(regions, state.myMesh.vertices);
         }
 
         // Calculate global quantities 
-        print_info.volume = find_volume(rv.triangles, rv.vertices);
+        print_info.volume = find_volume(rv.triangles, rv.vertices) / 1000;
         print_info.surface_area = find_surface_area(rv.triangles, rv.vertices);
         print_info.curvature = find_curvature(rv.triangles, rv.vertices, rv.vertexToTri);
 
@@ -421,7 +426,7 @@ int main_calculations()
 int main_visual()
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(1000), OpenGLVersion::GL2 };
-    std::string fileName = "Young healthy volunteer_011.obj";
+    std::string fileName = "Young healthy volunteer_038.obj";
 
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt";
@@ -466,7 +471,7 @@ int main_visual()
 
     // Calculate the actual volume captured by mesh
     RVInfo info {};
-    info.volume = find_volume(rv.triangles, rv.vertices);
+    info.volume = find_volume(rv.triangles, rv.vertices) / 1000;
     info.surfaceArea = find_surface_area(rv.triangles, rv.vertices);
     info.curvature = find_curvature(rv.triangles, rv.vertices, rv.vertexToTri);
     info.radius = rv.radius;

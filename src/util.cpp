@@ -30,7 +30,7 @@ double find_volume(std::vector<glm::uvec3>& triangles,
         volume += (1.0 / 6.0) * (-p3.position[0] * p2.position[1] * p1.position[2] + p2.position[0] * p3.position[1] * p1.position[2] + p3.position[0] * p1.position[1] * p2.position[2] - p1.position[0] * p3.position[1] * p2.position[2] - p2.position[0] * p1.position[1] * p3.position[2] + p1.position[0] * p2.position[1] * p3.position[2]);
     }
     
-    return abs(volume) / 1000;
+    return abs(volume);
 }
 
 // Calculates surface area of the mesh 
@@ -420,9 +420,11 @@ void set_indexed_curvature(std::vector<glm::uvec3>& triangles,
 {
     // Calculate the regional volumes 
     auto regional_vols = regional_volumes(vertices, triangles, vertexToTri); 
+    auto v_total = find_volume(triangles, vertices); 
+//    auto k_reg = std::cbrt(4 * M_PI / (3 * v_total)); 
 
     for (auto& v : vertices) {
-        double k_reg = std::cbrt(4 * M_PI / (3 * regional_vols[(int)v.region]));
+        auto k_reg = std::cbrt(4 * M_PI / (3 * regional_vols[(int)v.region]));
 
         v.set_index_curv(v.curvature / k_reg); 
     }
