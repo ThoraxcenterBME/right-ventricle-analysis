@@ -151,6 +151,7 @@ void loadRingFromFile(std::string& name, std::vector<Vertex>& vertices) {
 
 }
 
+// Function for finding approximate radius of mesh
 double largestDist(std::vector<Vertex>& vertices) {
     float dist = -10000; 
     for (int i = 0; i < vertices.size(); i++) {

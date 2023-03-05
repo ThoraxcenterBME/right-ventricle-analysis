@@ -203,27 +203,6 @@ double mixed_voronoi(Vertex& currentVertex,
     return 0.125 * (t_1 + t_2); 
 }
 
-// Computes mixed voronoi region area for a triangle
-double mixed_voronoi_old(Vertex& currentVertex,
-    Vertex& j, 
-    Vertex& p,
-    Vertex& q) 
-{
-    // Find cot(alpha)
-    glm::vec3 p_i = currentVertex.position - p.position;
-    glm::vec3 p_j = j.position - p.position;
-    double alphaWeight = glm::dot(p_i, p_j) / glm::length(glm::cross(p_i, p_j));
-
-    // Find cot(beta)
-    glm::vec3 q_i = currentVertex.position - q.position;
-    glm::vec3 q_j = j.position - q.position;
-    double betaWeight = glm::dot(q_i, q_j) / glm::length(glm::cross(q_i, q_j));
-    double norm = glm::length(currentVertex.position - j.position);
-
-    return 0.125 * (alphaWeight + betaWeight) * (norm * norm); 
-}
-
-
 // Finds Voronoi Area
 double find_voronoi_area(Vertex& currentVertex,
     std::vector<Vertex>& vertices) 
@@ -231,6 +210,7 @@ double find_voronoi_area(Vertex& currentVertex,
     int ringSize = currentVertex.ring.size();
     double A_i = 0; 
     
+    // Add voronoi region corresponding to each adjacent triangle
     for (int k = 0; k < ringSize; k++) {
         // Get opposite vertex
         Vertex j = vertices[currentVertex.ring[k]];
@@ -246,7 +226,7 @@ double find_voronoi_area(Vertex& currentVertex,
         } else { // Don't use Voronoi with obtuse angles
             double cosine_i = glm::dot(glm::normalize(j.position - currentVertex.position), glm::normalize(p.position - currentVertex.position));
             double area_T = 0.5 * glm::length(glm::cross(j.position - currentVertex.position, p.position - currentVertex.position)); 
-            
+     
             if (cosine_i < 0) { // Angle at vertex i is obtuse 
                 A_i += 0.5 * area_T; 
             } else {
@@ -256,7 +236,6 @@ double find_voronoi_area(Vertex& currentVertex,
     }
     return  A_i; 
 }
-
 
 // Find the Gaussian curvature k_g at a vertex v. 
 float find_gaussian_curvature(Vertex& currentVertex, 
@@ -345,13 +324,10 @@ std::vector<Ray> find_normals(std::vector<Vertex>& vertices,
 {
     // Find the center of the mesh
     std::vector<glm::vec3> positions;
-    std::transform(std::begin(vertices), std::end(vertices),
-        std::back_inserter(positions),
-        [](const Vertex& v) { return v.position; });
-
+    std::transform(std::begin(vertices), std::end(vertices), std::back_inserter(positions), [](const Vertex& v) { return v.position; });
     const glm::vec3 center = std::accumulate(std::begin(positions), std::end(positions), glm::vec3(0.0f)) / static_cast<float>(positions.size());
 
-    // Find normals
+    // List of normals
     std::vector<Ray> normals = {};
 
     for (glm::uvec3& tri : triangles) {
@@ -363,7 +339,7 @@ std::vector<Ray> find_normals(std::vector<Vertex>& vertices,
 
         float dot_product = glm::dot(I, N);
 
-        // Not outside of the surface
+        // Not pointing out of the surface, then flip it
         if (dot_product < 0) {
             N = -1.0f * N;
         }
@@ -373,6 +349,7 @@ std::vector<Ray> find_normals(std::vector<Vertex>& vertices,
     return normals;
 }
 
+// Find normal vector at vertex, average of normals from surrounding triangles
 glm::vec3 vertex_normal(int i, 
     std::map<int, std::vector<int>>& vertexToTri, 
     std::vector<Ray>& normals) 
@@ -413,7 +390,7 @@ std::vector<Ray> findLaplaceRays(std::vector<glm::uvec3>& triangles,
     return laplace; 
 }
 
-
+// Sets the indexed curvature (to be completed)
 void set_indexed_curvature(std::vector<glm::uvec3>& triangles,
     std::vector<Vertex>& vertices,
     std::map<int, std::vector<int>>& vertexToTri)
@@ -421,10 +398,10 @@ void set_indexed_curvature(std::vector<glm::uvec3>& triangles,
     // Calculate the regional volumes 
     auto regional_vols = regional_volumes(vertices, triangles, vertexToTri); 
     auto v_total = find_volume(triangles, vertices); 
-//    auto k_reg = std::cbrt(4 * M_PI / (3 * v_total)); 
+    auto k_reg = std::cbrt(4 * M_PI / (3 * v_total)); 
 
     for (auto& v : vertices) {
-        auto k_reg = std::cbrt(4 * M_PI / (3 * regional_vols[(int)v.region]));
+//        auto k_reg = std::cbrt(4 * M_PI / (3 * regional_vols[(int)v.region]));
 
         v.set_index_curv(v.curvature / k_reg); 
     }
@@ -451,7 +428,7 @@ double find_curvature(std::vector<glm::uvec3>& triangles,
         if (vertices[i].exclude)
             continue; 
 
-        // Retrieve current vertex and voronoi area 
+        // Retrieve current vertex and corresponding normal vector
         Vertex& currentVertex = vertices[i]; 
         glm::vec3 n = vertex_normal(i, vertexToTri, normals); 
 
@@ -549,6 +526,11 @@ std::vector<glm::vec3> heat_color(std::vector<glm::uvec3>& triangles,
 
     for (auto v : vertices) {
         colors.push_back(heat_color_calculation(v, minMax.first, minMax.second));
+
+        if (v.indexed_curv > 3) {
+            printf("At %d : curvature is: %.5f => ", v.index, v.indexed_curv); 
+            std::cout << v.region << std::endl;
+        } 
     }
 
     printf(" %.5f, %.5f \n" , minMax.first, minMax.second); 

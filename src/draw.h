@@ -11,5 +11,4 @@ DISABLE_WARNINGS_POP()
 void drawMeshWithColors(const Mesh& mesh, std::vector<glm::vec3> colors);
 void drawAxis(); 
 void draw_regions(std::vector<Vertex>& vertices); 
-void draw_normal_rays(std::vector<Ray>& normals); 
-void draw_laplace_rays(std::vector<Ray>& laplace);
+void draw_rays(std::vector<Ray>& normals, glm::vec3& color); 
