@@ -28,7 +28,7 @@ DISABLE_WARNINGS_POP()
 #include "util.h" 
 #include <framework/ray.h>
 
-// TODO: Make this work with colours for different curvature 
+
 void drawMeshWithColors(const Mesh& mesh, std::vector<glm::vec3> colors)
 {
     glBegin(GL_TRIANGLES);
@@ -134,16 +134,10 @@ void drawRay(const Ray& ray, const glm::vec3& color)
     glPopAttrib();
 }
 
-void draw_normal_rays(std::vector<Ray>& normals)
+
+void draw_rays(std::vector<Ray>& normals, glm::vec3& color)
 {
     for (auto& r : normals) {
-        drawRay(r, glm::vec3(1, 0, 0)); 
-    }
-}
-
-void draw_laplace_rays(std::vector<Ray>& laplace)
-{
-    for (auto& r : laplace) {
-        drawRay(r, glm::vec3(0, 0, 0));
+        drawRay(r, color); 
     }
 }

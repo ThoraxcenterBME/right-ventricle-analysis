@@ -273,7 +273,8 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info,
     // Check for drawing normals
     ImGui::Checkbox("Show Surface Normals", &show_normal_gui); 
     if (show_normal_gui) {
-        draw_normal_rays(normals); 
+        auto red = glm::vec3(1, 0, 0); 
+        draw_rays(normals, red); 
     }
     ImGui::Spacing();
     ImGui::Separator();
@@ -426,7 +427,7 @@ int main_calculations()
 int main_visual()
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(1000), OpenGLVersion::GL2 };
-    std::string fileName = "Young healthy volunteer_038.obj";
+    std::string fileName = "Young healthy volunteer_000.obj";
 
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt";
@@ -455,19 +456,20 @@ int main_visual()
         mark_regions(regions, state.myMesh.vertices);
     }
 
-     state.materialInformation.Kd = glm::vec3(75, 139, 59) / 255.0f;
-     state.materialInformation.Ks = glm::vec3(221, 42, 116) / 255.0f;
-     state.materialInformation.shininess = 20.0f;
-     meshFlipZ(state.myMesh);
-     float lp = .85f;
-     state.lights.push_back(Light { glm::vec3(lp, lp, lp), glm::vec3(224, 215, 73) / 255.0f });
-     state.lights.push_back(Light { glm::vec3(-lp, lp, lp), glm::vec3(224, 215, 73) / 255.0f });
-     state.lights.push_back(Light { glm::vec3(lp, -lp, lp), glm::vec3(224, 215, 73) / 255.0f });
-     state.lights.push_back(Light { glm::vec3(lp, lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
-     state.lights.push_back(Light { glm::vec3(-lp, -lp, lp), glm::vec3(224, 215, 73) / 255.0f });
-     state.lights.push_back(Light { glm::vec3(lp, -lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
-     state.lights.push_back(Light { glm::vec3(-lp, lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
-     state.lights.push_back(Light { glm::vec3(-lp, -lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
+    // Create background and lights for mesh 
+    state.materialInformation.Kd = glm::vec3(75, 139, 59) / 255.0f;
+    state.materialInformation.Ks = glm::vec3(221, 42, 116) / 255.0f;
+    state.materialInformation.shininess = 20.0f;
+    meshFlipZ(state.myMesh);
+    float lp = .85f;
+    state.lights.push_back(Light { glm::vec3(lp, lp, lp), glm::vec3(224, 215, 73) / 255.0f });
+    state.lights.push_back(Light { glm::vec3(-lp, lp, lp), glm::vec3(224, 215, 73) / 255.0f });
+    state.lights.push_back(Light { glm::vec3(lp, -lp, lp), glm::vec3(224, 215, 73) / 255.0f });
+    state.lights.push_back(Light { glm::vec3(lp, lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
+    state.lights.push_back(Light { glm::vec3(-lp, -lp, lp), glm::vec3(224, 215, 73) / 255.0f });
+    state.lights.push_back(Light { glm::vec3(lp, -lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
+    state.lights.push_back(Light { glm::vec3(-lp, lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
+    state.lights.push_back(Light { glm::vec3(-lp, -lp, -lp), glm::vec3(224, 215, 73) / 255.0f });
 
     // Calculate the actual volume captured by mesh
     RVInfo info {};
@@ -502,8 +504,9 @@ int main_visual()
     return 0; 
 }
 
-
+// Main function 
 int main(int argc, char** argv)
 {
-    main_calculations();
+    // Either main_calculations or main_visual
+    main_visual();
 }
