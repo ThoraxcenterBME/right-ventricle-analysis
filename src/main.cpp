@@ -86,6 +86,7 @@ struct PrintInfo {
     float volume;
     float surface_area;
     float curvature;
+    float index_curv; 
     float min_curv; 
     float max_curv; 
     std::vector<double> curvatures; 
@@ -360,7 +361,7 @@ void print_array_csv_volume(std::vector<double>& values)
 }
 
 void print_info_csv(PrintInfo info) {
-    printf("%f , %f, %f, ", info.volume, info.surface_area, info.curvature);
+    printf("%f , %f, %f, %f, ", info.volume, info.surface_area, info.curvature, info.index_curv);
 
     print_array_csv_volume(info.volumes); 
     print_array_csv(info.surface_areas); 
@@ -386,7 +387,7 @@ int main_calculations()
     std::string regions = "region.txt";
 
     for (int i = 0; i <= 38; i++) {
-        printf(" \n"); 
+       // printf(" \n"); 
         printf("%d, ", i); 
         fileName = construct_file_string(i); 
         // Load the mesh file and ring file
@@ -409,6 +410,7 @@ int main_calculations()
         print_info.volume = find_volume(rv.triangles, rv.vertices) / 1000;
         print_info.surface_area = find_surface_area(rv.triangles, rv.vertices);
         print_info.curvature = find_curvature(rv.triangles, rv.vertices, rv.vertexToTri);
+        print_info.index_curv = find_indexed_curvature(rv.vertices); 
 
         // Calculate regional quantities 
         print_info.curvatures = find_regional_curvature(rv.vertices);
@@ -509,5 +511,5 @@ int main_visual()
 int main(int argc, char** argv)
 {
     // Either main_calculations or main_visual
-    main_visual();
+    main_calculations();
 }
