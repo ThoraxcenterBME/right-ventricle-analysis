@@ -401,7 +401,7 @@ void set_indexed_curvature(std::vector<glm::uvec3>& triangles,
     auto k_reg = std::cbrt(4 * M_PI / (3 * v_total)); 
 
     for (auto& v : vertices) {
-//        auto k_reg = std::cbrt(4 * M_PI / (3 * regional_vols[(int)v.region]));
+      //  auto k_reg = std::cbrt(4 * M_PI / (3 * regional_vols[(int)v.region]));
 
         v.set_index_curv(v.curvature / k_reg); 
     }
@@ -501,17 +501,24 @@ glm::vec3 heat_color_calculation(const Vertex& vertex,
 
 // Find minimum and maximum curvature 
 std::pair<double, double> find_min_max(std::vector<Vertex>& vertices) {
-    double min = 100000; 
-    double max = -100000; 
+    auto min = 0.0; 
+    auto max = 0.0; 
+    auto k_n = std::vector<double>{}; 
+    auto percentile_count = 45; 
 
     for (auto v : vertices) {
-        min = std::min(v.indexed_curv, min); 
-        max = std::max(v.indexed_curv, max); 
+        k_n.push_back(v.indexed_curv); 
+    }
+    std::sort(k_n.begin(), k_n.end());
+
+    for (int i = 0; i < percentile_count; i++) {
+        min += k_n[i]; 
+        max += k_n[k_n.size() - 1 - i]; 
     }
 
     std::pair<double, double> minMax = {};
-    minMax.first = min; 
-    minMax.second = max; 
+    minMax.first = min / (static_cast<double> (percentile_count)); 
+    minMax.second = max / (static_cast<double>(percentile_count)); 
 
     return minMax;
 }
@@ -526,15 +533,9 @@ std::vector<glm::vec3> heat_color(std::vector<glm::uvec3>& triangles,
 
     for (auto v : vertices) {
         colors.push_back(heat_color_calculation(v, minMax.first, minMax.second));
-
-        if (v.indexed_curv > 3) {
-            printf("At %d : curvature is: %.5f => ", v.index, v.indexed_curv); 
-            std::cout << v.region << std::endl;
-        } 
     }
 
     printf(" %.5f, %.5f \n" , minMax.first, minMax.second); 
-
     return colors; 
 }
 
@@ -612,4 +613,22 @@ void center_mesh(std::vector<Vertex>& vertices) {
     for (Vertex& v : vertices) {
         v.position -= center; 
     }
+}
+
+// Calculates the total indexed curvature 
+double calculate_indexed_curvature(std::vector<Vertex>& vertices)
+{
+    auto curv = 0.0;
+    auto count = 0;
+
+    for (auto& v : vertices) {
+        // If we want to exclude this vertex
+        if (v.exclude)
+            continue;
+
+        count++;
+        curv += v.indexed_curv;
+    }
+
+    return curv / count; 
 }

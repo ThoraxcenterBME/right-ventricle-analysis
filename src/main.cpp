@@ -386,6 +386,7 @@ int main_calculations()
     std::string regions = "region.txt";
 
     for (int i = 0; i <= 38; i++) {
+        printf(" \n"); 
         printf("%d, ", i); 
         fileName = construct_file_string(i); 
         // Load the mesh file and ring file
@@ -416,7 +417,7 @@ int main_calculations()
 
         print_info_csv(print_info); 
         heat_color(rv.triangles, rv.vertices, rv.vertexToTri);
-       // printf("\n"); 
+      
     }
     return 0; 
 }
