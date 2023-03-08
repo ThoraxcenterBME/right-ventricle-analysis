@@ -51,15 +51,33 @@ double find_surface_area(std::vector<glm::uvec3>& triangles,
     return 0.5 * sa; 
 }
 
+// This find the triangles that belong to a specific region
+// Note that a triangle is in a region if and only if at least two of its vertices is in that region
+std::set<int> find_all_in_region(std::vector<Vertex>& vs,
+    std::vector<glm::uvec3>& ts,
+    Region reg) {
 
-void add_all_to_region(std::set<int>& region,
-    std::vector<int>& ring)
-{
-    for (auto& r : ring) {
-        region.insert(r);
+    std::set<int> region = {};
+    // Add the triangle to the region if and only if at least two of the triangles are in that specified region
+    for (int i = 0; i < ts.size(); i++) {
+        // Retrieve the triangle 
+        auto& t = ts[i]; 
+        // Vertex 0 and Vertex 1 are in the region
+        if (vs[t[0]].region == reg && vs[t[1]].region == reg) {
+            region.insert(i); 
+        }
+        // Vertex 0 and Vertex 2 are in the region
+        if (vs[t[0]].region == reg && vs[t[2]].region == reg) {
+            region.insert(i); 
+        }
+        // Vertex 1 and Vertex 2 are in the region
+        if (vs[t[1]].region == reg && vs[t[2]].region == reg) {
+            region.insert(i); 
+        }
     }
-}
 
+    return region; 
+}
 
 // Calculates surface area of a region
 double find_surface_area_regional(std::vector<glm::uvec3>& triangles,
@@ -84,39 +102,18 @@ std::vector<double> regional_volumes(std::vector<Vertex>& vs,
     std::vector<glm::uvec3>& ts,
     std::map<int, std::vector<int>>& vertexToTri)
 {
-    std::set<int> it_region = {};
-    std::set<int> ot_region = {};
-    std::set<int> sb_region = {};
-    std::set<int> fb_region = {};
-    std::set<int> sa_region = {};
-    std::set<int> fa_region = {};
+    // Find which triangles belong to which region 
+    auto it_region = find_all_in_region(vs, ts, Region::IT); 
+    auto ot_region = find_all_in_region(vs, ts, Region::OT); 
+    auto sb_region = find_all_in_region(vs, ts, Region::SB); 
+    auto fb_region = find_all_in_region(vs, ts, Region::FB);
+    auto sa_region = find_all_in_region(vs, ts, Region::SA);
+    auto fa_region = find_all_in_region(vs, ts, Region::FA); 
 
-    for (auto& v : vs) {
-        auto& ring = vertexToTri[v.index];
-        switch (v.region) {
-        case Region::IT:
-            add_all_to_region(it_region, ring);
-            break;
-        case Region::OT:
-            add_all_to_region(ot_region, ring);
-            break;
-        case Region::SB:
-            add_all_to_region(sb_region, ring);
-            break;
-        case Region::FB:
-            add_all_to_region(fb_region, ring);
-            break;
-        case Region::SA:
-            add_all_to_region(sa_region, ring);
-            break;
-        case Region::FA:
-            add_all_to_region(fa_region, ring);
-            break;
-        }
-    }
-
+    // Determine the scaling factor 
     double ratio_scale = find_volume(ts, vs) / find_surface_area(ts, vs);
 
+    // Determine regional volumes 
     double v_reg_it = ratio_scale * find_surface_area_regional(ts, vs, it_region);
     double v_reg_ot = ratio_scale * find_surface_area_regional(ts, vs, ot_region);
     double v_reg_sb = ratio_scale * find_surface_area_regional(ts, vs, sb_region);
@@ -131,37 +128,15 @@ std::vector<double> regional_surface_areas(std::vector<Vertex>& vs,
     std::vector<glm::uvec3>& ts,
     std::map<int, std::vector<int>>& vertexToTri)
 {
-    std::set<int> it_region = {};
-    std::set<int> ot_region = {};
-    std::set<int> sb_region = {};
-    std::set<int> fb_region = {};
-    std::set<int> sa_region = {};
-    std::set<int> fa_region = {};
+    // Find the triangles which belong to a certain region 
+    auto it_region = find_all_in_region(vs, ts, Region::IT);
+    auto ot_region = find_all_in_region(vs, ts, Region::OT);
+    auto sb_region = find_all_in_region(vs, ts, Region::SB);
+    auto fb_region = find_all_in_region(vs, ts, Region::FB);
+    auto sa_region = find_all_in_region(vs, ts, Region::SA);
+    auto fa_region = find_all_in_region(vs, ts, Region::FA); 
 
-    for (auto& v : vs) {
-        auto& ring = vertexToTri[v.index];
-        switch (v.region) {
-        case Region::IT:
-            add_all_to_region(it_region, ring);
-            break;
-        case Region::OT:
-            add_all_to_region(ot_region, ring);
-            break;
-        case Region::SB:
-            add_all_to_region(sb_region, ring);
-            break;
-        case Region::FB:
-            add_all_to_region(fb_region, ring);
-            break;
-        case Region::SA:
-            add_all_to_region(sa_region, ring);
-            break;
-        case Region::FA:
-            add_all_to_region(fa_region, ring);
-            break;
-        }
-    }
-
+    // Find regional surface area 
     double sa_reg_it = find_surface_area_regional(ts, vs, it_region);
     double sa_reg_ot = find_surface_area_regional(ts, vs, ot_region);
     double sa_reg_sb = find_surface_area_regional(ts, vs, sb_region);
@@ -401,7 +376,7 @@ void set_indexed_curvature(std::vector<glm::uvec3>& triangles,
     auto k_reg = std::cbrt(4 * M_PI / (3 * v_total)); 
 
     for (auto& v : vertices) {
-//        auto k_reg = std::cbrt(4 * M_PI / (3 * regional_vols[(int)v.region]));
+      //  auto k_reg = std::cbrt(4 * M_PI / (3 * regional_vols[(int)v.region]));
 
         v.set_index_curv(v.curvature / k_reg); 
     }
@@ -501,17 +476,24 @@ glm::vec3 heat_color_calculation(const Vertex& vertex,
 
 // Find minimum and maximum curvature 
 std::pair<double, double> find_min_max(std::vector<Vertex>& vertices) {
-    double min = 100000; 
-    double max = -100000; 
+    auto min = 0.0; 
+    auto max = 0.0; 
+    auto k_n = std::vector<double>{}; 
+    auto percentile_count = 45; 
 
     for (auto v : vertices) {
-        min = std::min(v.indexed_curv, min); 
-        max = std::max(v.indexed_curv, max); 
+        k_n.push_back(v.indexed_curv); 
+    }
+    std::sort(k_n.begin(), k_n.end());
+
+    for (int i = 0; i < percentile_count; i++) {
+        min += k_n[i]; 
+        max += k_n[k_n.size() - 1 - i]; 
     }
 
     std::pair<double, double> minMax = {};
-    minMax.first = min; 
-    minMax.second = max; 
+    minMax.first = min / (static_cast<double> (percentile_count)); 
+    minMax.second = max / (static_cast<double>(percentile_count)); 
 
     return minMax;
 }
@@ -526,15 +508,9 @@ std::vector<glm::vec3> heat_color(std::vector<glm::uvec3>& triangles,
 
     for (auto v : vertices) {
         colors.push_back(heat_color_calculation(v, minMax.first, minMax.second));
-
-        if (v.indexed_curv > 3) {
-            printf("At %d : curvature is: %.5f => ", v.index, v.indexed_curv); 
-            std::cout << v.region << std::endl;
-        } 
     }
 
     printf(" %.5f, %.5f \n" , minMax.first, minMax.second); 
-
     return colors; 
 }
 
@@ -612,4 +588,22 @@ void center_mesh(std::vector<Vertex>& vertices) {
     for (Vertex& v : vertices) {
         v.position -= center; 
     }
+}
+
+// Calculates the total indexed curvature 
+double find_indexed_curvature(std::vector<Vertex>& vertices)
+{
+    auto curv = 0.0;
+    auto count = 0;
+
+    for (auto& v : vertices) {
+        // If we want to exclude this vertex
+        if (v.exclude)
+            continue;
+
+        count++;
+        curv += v.indexed_curv;
+    }
+
+    return curv / count; 
 }
