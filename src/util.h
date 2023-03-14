@@ -25,3 +25,4 @@ std::vector<Ray> findLaplaceRays(std::vector<glm::uvec3>& triangles, std::vector
 std::vector<double> regional_volumes(std::vector<Vertex>& vs, std::vector<glm::uvec3>& ts, std::map<int, std::vector<int>>& vertexToTri);
 std::vector<double> regional_surface_areas(std::vector<Vertex>& vs, std::vector<glm::uvec3>& ts, std::map<int, std::vector<int>>& vertexToTri); 
 double find_indexed_curvature(std::vector<Vertex>& vertices);
+std::pair<double, double> find_min_max(std::vector<Vertex>& vertices); 

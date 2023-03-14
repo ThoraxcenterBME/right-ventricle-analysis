@@ -266,7 +266,7 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info,
     ImGui::Separator();
 
     // Display Curvature
-    std::string curveString = "Curvature: " + std::to_string(info.curvature);
+    std::string curveString = "Indexed Curvature: " + std::to_string(info.curvature);
     ImGui::Text(curveString.c_str());
     ImGui::Spacing();
     ImGui::Separator();
@@ -346,26 +346,32 @@ void set_regional(RVInfo& info, std::vector<Vertex>& vertices) {
     info.region6 = curvatures[5];
 }
 
-void print_array_csv(std::vector<double>& values) {
-    for (auto& v : values) {
-        printf("% f,", v);
+void write_to_file(std::string filename, PrintInfo info, int i, std::pair<double, double>& minmax) {
+    std::ofstream datafile; 
+    datafile.open(std::filesystem::path(DATA_DIR) / filename, std::ios_base::app); 
+    datafile << i << ", "; 
+    datafile << info.volume << ", ";
+    datafile << info.surface_area << ", "; 
+    datafile << info.curvature << ", "; 
+   
+
+    for (auto& v : info.volumes) {
+        datafile << v / 1000.0 << ", "; 
     }
-}
 
-
-void print_array_csv_volume(std::vector<double>& values)
-{
-    for (auto& v : values) {
-        printf("% f,", v / 1000);
+    for (auto& sa : info.surface_areas) {
+        datafile << sa << ", "; 
     }
-}
 
-void print_info_csv(PrintInfo info) {
-    printf("%f , %f, %f, %f, ", info.volume, info.surface_area, info.curvature, info.index_curv);
+    for (auto& c : info.curvatures) {
+        datafile << c << ", "; 
+    }
+    datafile << minmax.first << ", "; 
+    datafile << minmax.second; 
 
-    print_array_csv_volume(info.volumes); 
-    print_array_csv(info.surface_areas); 
-    print_array_csv(info.curvatures); 
+    datafile << "\n"; 
+
+    datafile.close(); 
 }
 
 std::string construct_file_string(int n) {
@@ -379,16 +385,14 @@ std::string construct_file_string(int n) {
 /*
 * This main function for calculations
 */
-int main_calculations()
+int main_calculations(std::string filename)
 {
     std::string fileName;
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt"; 
     std::string regions = "region.txt";
 
-    for (int i = 0; i <= 38; i++) {
-       // printf(" \n"); 
-        printf("%d, ", i); 
+    for (int i = 0; i <= 38; i++) {      
         fileName = construct_file_string(i); 
         // Load the mesh file and ring file
         std::ifstream ifile;
@@ -417,9 +421,9 @@ int main_calculations()
         print_info.volumes = regional_volumes(rv.vertices, rv.triangles, rv.vertexToTri); 
         print_info.surface_areas = regional_surface_areas(rv.vertices, rv.triangles, rv.vertexToTri); 
 
-        print_info_csv(print_info); 
-        heat_color(rv.triangles, rv.vertices, rv.vertexToTri);
-      
+        // Write to CSV file
+        auto minmax = find_min_max(rv.vertices); 
+        write_to_file(filename, print_info, i, minmax); 
     }
     return 0; 
 }
@@ -479,6 +483,9 @@ int main_visual()
     info.volume = find_volume(rv.triangles, rv.vertices) / 1000;
     info.surfaceArea = find_surface_area(rv.triangles, rv.vertices);
     info.curvature = find_curvature(rv.triangles, rv.vertices, rv.vertexToTri);
+
+    // Reset to show _indexed_ curvature 
+    info.curvature = find_indexed_curvature(rv.vertices); 
     info.radius = rv.radius;
 
     // GUI (Visual Debug) features
@@ -511,5 +518,5 @@ int main_visual()
 int main(int argc, char** argv)
 {
     // Either main_calculations or main_visual
-    main_calculations();
+    main_visual();
 }

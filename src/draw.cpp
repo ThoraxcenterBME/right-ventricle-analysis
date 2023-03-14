@@ -29,7 +29,7 @@ DISABLE_WARNINGS_POP()
 #include <framework/ray.h>
 
 
-void drawMeshWithColors(const Mesh& mesh, std::vector<glm::vec3> colors)
+void drawMeshWithColors(const Mesh& mesh, std::vector<glm::vec3>& colors)
 {
     glBegin(GL_TRIANGLES);
     for (const auto& triangle : mesh.triangles) {
