@@ -479,7 +479,8 @@ std::pair<double, double> find_min_max(std::vector<Vertex>& vertices) {
     auto min = 0.0; 
     auto max = 0.0; 
     auto k_n = std::vector<double>{}; 
-    auto percentile_count = 45; 
+    // Define percentile in order to account for outliers 
+    auto percentile_count = static_cast<int> (0.05 * vertices.size()); 
 
     for (auto v : vertices) {
         k_n.push_back(v.indexed_curv); 
@@ -607,3 +608,4 @@ double find_indexed_curvature(std::vector<Vertex>& vertices)
 
     return curv / count; 
 }
+
