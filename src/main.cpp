@@ -80,6 +80,7 @@ struct RVInfo {
     float region4; 
     float region5; 
     float region6; 
+    double global_area_strain; 
 };
 
 struct PrintInfo {
@@ -92,6 +93,7 @@ struct PrintInfo {
     std::vector<double> curvatures; 
     std::vector<double> volumes; 
     std::vector<double> surface_areas; 
+    std::pair<double, double> minmax; 
 };
 
 glm::vec3 computeLighting(const ProgramState& programState, unsigned vertexIndex, const glm::vec3& cameraPos, const Light& light)
@@ -346,7 +348,7 @@ void set_regional(RVInfo& info, std::vector<Vertex>& vertices) {
     info.region6 = curvatures[5];
 }
 
-void write_to_file(std::string filename, PrintInfo info, int i, std::pair<double, double>& minmax) {
+void write_to_file(std::string filename, PrintInfo info, int i) {
     std::ofstream datafile; 
     datafile.open(std::filesystem::path(DATA_DIR) / filename, std::ios_base::app); 
     datafile << i << ", "; 
@@ -366,12 +368,22 @@ void write_to_file(std::string filename, PrintInfo info, int i, std::pair<double
     for (auto& c : info.curvatures) {
         datafile << c << ", "; 
     }
-    datafile << minmax.first << ", "; 
-    datafile << minmax.second; 
+    datafile << info.minmax.first << ", "; 
+    datafile << info.minmax.second; 
 
     datafile << "\n"; 
 
     datafile.close(); 
+}
+
+void write_strain_to_file(std::string filename, Strain strain)
+{
+    std::ofstream datafile;
+    datafile.open(std::filesystem::path(DATA_DIR) / filename, std::ios_base::app);
+    datafile << "\nGlobal Area Strain \n"; 
+    datafile << strain.global_area_strain; 
+
+    datafile.close();
 }
 
 std::string construct_file_string(int n) {
@@ -385,13 +397,19 @@ std::string construct_file_string(int n) {
 /*
 * This main function for calculations
 */
-int main_calculations(std::string filename)
+int main_calculations(std::string csvfile)
 {
+    // File name strings 
     std::string fileName;
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt"; 
     std::string regions = "region.txt";
 
+    // Variables used for calculating strain 
+    int es_index = 14;
+    int ed_index = 37;
+    Strain strain = {}; 
+   
     for (int i = 0; i <= 38; i++) {      
         fileName = construct_file_string(i); 
         // Load the mesh file and ring file
@@ -422,9 +440,22 @@ int main_calculations(std::string filename)
         print_info.surface_areas = regional_surface_areas(rv.vertices, rv.triangles, rv.vertexToTri); 
 
         // Write to CSV file
-        auto minmax = find_min_max(rv.vertices); 
-        write_to_file(filename, print_info, i, minmax); 
+        print_info.minmax = find_min_max(rv.vertices); 
+        write_to_file(csvfile, print_info, i);
+
+        // Recording variables for calculating strain 
+        if (i == es_index) {
+            strain.global_es_area = print_info.surface_area; 
+        }
+        if (i == ed_index) {
+            strain.global_ed_area = print_info.surface_area; 
+        }
     }
+
+    // Output strain calculations
+    strain.global_area_strain = area_strain(strain.global_ed_area, strain.global_es_area);
+    write_strain_to_file(csvfile, strain); 
+
     return 0; 
 }
 

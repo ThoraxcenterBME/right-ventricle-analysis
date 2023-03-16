@@ -12,6 +12,11 @@ struct ColorRegion {
     glm::vec3 c6 = glm::vec3(1.0, 0.0, 0.0); 
 };
 
+struct Strain {
+    double global_ed_area;
+    double global_es_area; 
+    double global_area_strain; 
+};
 
 double find_volume(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& vertices);
 double find_curvature(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& vertices, std::map<int, std::vector<int>>& vertexToTri);
@@ -26,3 +31,4 @@ std::vector<double> regional_volumes(std::vector<Vertex>& vs, std::vector<glm::u
 std::vector<double> regional_surface_areas(std::vector<Vertex>& vs, std::vector<glm::uvec3>& ts, std::map<int, std::vector<int>>& vertexToTri); 
 double find_indexed_curvature(std::vector<Vertex>& vertices);
 std::pair<double, double> find_min_max(std::vector<Vertex>& vertices); 
+double area_strain(double ed_area, double es_area); 

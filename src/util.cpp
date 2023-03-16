@@ -609,3 +609,10 @@ double find_indexed_curvature(std::vector<Vertex>& vertices)
     return curv / count; 
 }
 
+// Calculates area strain
+// Same formulation as: https://www.onlinejase.com/article/S0894-7317(14)00925-0/pdf
+// Area strain defined as: https://doi.org/10.1093/ehjci/jeaa189
+double area_strain(double ed_area, double es_area) 
+{
+    return 100 * ((es_area - ed_area) / ed_area); 
+}
