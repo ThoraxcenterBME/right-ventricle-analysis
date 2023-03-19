@@ -69,33 +69,6 @@ struct ProgramState {
     MaterialInformation materialInformation;
 };
 
-struct RVInfo {
-    float volume;
-    float surfaceArea; 
-    float curvature; 
-    float radius; 
-    float region1; 
-    float region2; 
-    float region3; 
-    float region4; 
-    float region5; 
-    float region6; 
-    double global_area_strain; 
-};
-
-struct PrintInfo {
-    float volume;
-    float surface_area;
-    float curvature;
-    float index_curv; 
-    float min_curv; 
-    float max_curv; 
-    std::vector<double> curvatures; 
-    std::vector<double> volumes; 
-    std::vector<double> surface_areas; 
-    std::pair<double, double> minmax; 
-};
-
 glm::vec3 computeLighting(const ProgramState& programState, unsigned vertexIndex, const glm::vec3& cameraPos, const Light& light)
 {
     const auto& vertex = programState.myMesh.vertices[vertexIndex];
@@ -243,6 +216,8 @@ void computeLighting(const ProgramState& state, const glm::vec3& cameraPos, std:
     }
 }
 
+
+// TODO: Change 
 void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info, 
     std::vector<Ray>& normals)
 {
@@ -292,39 +267,27 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info,
 
 
     // Display Region 1 
-    std::string r1_curvature = "Curvature (Inflow Tract): " + std::to_string(info.region1);
-    ImGui::TextColored(ImVec4(color.c1.x, color.c1.y, color.c1.z, 1.0), r1_curvature.c_str());
+    std::string r1_curvature = "Curvature (Inferior Free Wall): " + std::to_string(info.regional_curvs[0]);
+    ImGui::TextColored(ImVec4(color.colors[0].x, color.colors[0].y, color.colors[2].z, 1.0), r1_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
     // Display Region 2
-    std::string r2_curvature = "Curvature (Outflow Tract): " + std::to_string(info.region2);
-    ImGui::TextColored(ImVec4(color.c2.x, color.c2.y, color.c2.z, 1.0), r2_curvature.c_str());
+    std::string r2_curvature = "Curvature (Lateral Free Wall): " + std::to_string(info.regional_curvs[1]);
+    ImGui::TextColored(ImVec4(color.colors[1].x, color.colors[1].y, color.colors[1].z, 1.0), r2_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
     // Display Region 3
-    std::string r3_curvature = "Curvature (Septal Body): " + std::to_string(info.region3);
-    ImGui::TextColored(ImVec4(color.c3.x, color.c3.y, color.c3.z, 1.0), r3_curvature.c_str());
+    std::string r3_curvature = "Curvature (Anterior Free Wall): " + std::to_string(info.regional_curvs[2]);
+    ImGui::TextColored(ImVec4(color.colors[2].x, color.colors[2].y, color.colors[2].z, 1.0), r3_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
 
     // Display Region 4
-    std::string r4_curvature = "Curvature (Free-wall Body): " + std::to_string(info.region4);
-    ImGui::TextColored(ImVec4(color.c4.x, color.c4.y, color.c4.z, 1.0), r4_curvature.c_str());
-    ImGui::Spacing();
-    ImGui::Separator();
-
-    // Display Region 5
-    std::string r5_curvature = "Curvature (Septal Apex): " + std::to_string(info.region5);
-    ImGui::TextColored(ImVec4(color.c5.x, color.c5.y, color.c5.z, 1.0), r5_curvature.c_str());
-    ImGui::Spacing();
-    ImGui::Separator();
-
-    // Display Region 6
-    std::string r6_curvature = "Curvature (Free-wall Apex): " + std::to_string(info.region6);
-    ImGui::TextColored(ImVec4(color.c6.x, color.c6.y, color.c6.z, 1.0), r6_curvature.c_str());
+    std::string r4_curvature = "Curvature (Septal Body): " + std::to_string(info.regional_curvs[3]);
+    ImGui::TextColored(ImVec4(color.colors[3].x, color.colors[3].y, color.colors[3].z, 1.0), r1_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
@@ -338,14 +301,13 @@ void printHelp()
     std::cout << "SPACE - replaces mouse click for selection, will then call your light placement function" << std::endl;
 }
 
+// Change 
 void set_regional(RVInfo& info, std::vector<Vertex>& vertices) {
     std::vector<double> curvatures = find_regional_curvature(vertices); 
-    info.region1 = curvatures[0];
-    info.region2 = curvatures[1];
-    info.region3 = curvatures[2];
-    info.region4 = curvatures[3];
-    info.region5 = curvatures[4];
-    info.region6 = curvatures[5];
+
+    for (auto& c : curvatures) {
+        info.regional_curvs.push_back(c);
+    }
 }
 
 void write_to_file(std::string filename, PrintInfo info, int i) {
