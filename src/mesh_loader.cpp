@@ -173,7 +173,8 @@ void mark_excluded(std::string& name, std::vector<Vertex>& vertices)
         std::istringstream lines(linebuf);
         int key;
         lines >> key; 
-        vertices[key].exclude = true; 
+        vertices[key].exclude = true;
+        vertices[key].set_region(Region::IGN); 
     }
 }
 

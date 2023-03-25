@@ -217,7 +217,6 @@ void computeLighting(const ProgramState& state, const glm::vec3& cameraPos, std:
 }
 
 
-// TODO: Change 
 void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info, 
     std::vector<Ray>& normals)
 {
@@ -287,7 +286,7 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info,
 
     // Display Region 4
     std::string r4_curvature = "Curvature (Septal Body): " + std::to_string(info.regional_curvs[3]);
-    ImGui::TextColored(ImVec4(color.colors[3].x, color.colors[3].y, color.colors[3].z, 1.0), r1_curvature.c_str());
+    ImGui::TextColored(ImVec4(color.colors[3].x, color.colors[3].y, color.colors[3].z, 1.0), r4_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
@@ -431,7 +430,7 @@ int main_visual()
 
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt";
-    std::string regions = "region.txt";
+    std::string regions = "new-region.txt";
 
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
     trackball.disableTranslation();
@@ -449,11 +448,12 @@ int main_visual()
     // Extra processing needed for RV Beutel
     if (rv.vertices.size() > 937) {
         center_mesh(rv.vertices);
-        mark_excluded(exclude_vertices, rv.vertices);
         mark_regions(regions, rv.vertices);
         scale_mesh(state.myMesh.vertices);
         center_mesh(state.myMesh.vertices);
         mark_regions(regions, state.myMesh.vertices);
+        mark_excluded(exclude_vertices, state.myMesh.vertices); 
+        mark_excluded(exclude_vertices, rv.vertices);
     }
 
     // Create background and lights for mesh 

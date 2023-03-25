@@ -6,6 +6,8 @@
 #include <glm/gtc/reciprocal.hpp>
 #include <glm/gtx/vector_angle.hpp>
 #include <map>
+#include <algorithm>
+#include <functional>
 #include <math.h>
 #include <numeric>
 #include <set>
@@ -355,23 +357,27 @@ std::vector<Ray> findLaplaceRays(std::vector<glm::uvec3>& triangles,
     return laplace; 
 }
 
+void set_value_indexed_curvature(Vertex& v, double idx_curv)
+{
+    v.indexed_curv = idx_curv;
+}
+
 // Sets the indexed curvature (to be completed)
 void set_indexed_curvature(std::vector<glm::uvec3>& triangles,
     std::vector<Vertex>& vertices,
     std::map<int, std::vector<int>>& vertexToTri)
 {
     // Calculate the regional volumes 
-    auto regional_vols = regional_volumes(vertices, triangles, vertexToTri); 
     auto v_total = find_volume(triangles, vertices); 
     auto k_reg = std::cbrt(4 * M_PI / (3 * v_total)); 
 
-    for (auto& v : vertices) {
-      //  auto k_reg = std::cbrt(4 * M_PI / (3 * regional_vols[(int)v.region]));
-
-        v.set_index_curv(v.curvature / k_reg); 
-    }
+    // Set the indexed curvature values 
+    std::transform(vertices.begin(), vertices.end(), vertices.begin(),
+        [&k_reg](Vertex& v) {
+            set_value_indexed_curvature(v, v.curvature / k_reg);
+            return v;
+        });
 }
-
 
 /*
 * Calculates the global curvature of a mesh
@@ -512,40 +518,24 @@ void scale_mesh(std::vector<Vertex>& vertices) {
     }
 }
 
-// TODO Change 
 // Find the values that correspond to regional curvature 
 std::vector<double> find_regional_curvature(std::vector<Vertex>& vertices) 
 {
     std::map<Region, std::vector<double>> regional_curvature = {}; 
    
-    /* for (Vertex& v : vertices) {
+    for (Vertex& v : vertices) {
         // Do not include in finding regional curvature 
         if (v.exclude)
-            continue; 
+            continue;
+        // Add indexed curvature to the corresponding regions
+        regional_curvature[v.region].push_back(v.indexed_curv); 
+    }
 
-        switch (v.region) {
-        case Region::IFW:
-            cn_1.first += v.indexed_curv; 
-            cn_1.second++; 
-            continue;
-        case Region::LFW:
-            cn_2.first += v.indexed_curv;
-            cn_2.second++; 
-            continue;
-        case Region:::
-            cn_3.first += v.indexed_curv;
-            cn_3.second++; 
-            continue;
-        case Region::FB:
-            cn_4.first += v.indexed_curv;
-            cn_4.second++; 
-            continue;
-        }
-    }*/ 
-
-    std::vector<double> r_vals = {
-       1, 2, 3, 4
-    }; 
+    std::vector<double> r_vals = {};
+    for (auto const& r_curv : regional_curvature) {
+        // Calculate average curvature of that region 
+        r_vals.push_back(std::accumulate(r_curv.second.begin(), r_curv.second.end(), 0.0) / r_curv.second.size()); 
+    }
 
     return r_vals; 
 }
@@ -567,19 +557,10 @@ void center_mesh(std::vector<Vertex>& vertices) {
 // Calculates the total indexed curvature 
 double find_indexed_curvature(std::vector<Vertex>& vertices)
 {
-    auto curv = 0.0;
-    auto count = 0;
+    std::vector<double> curvatures;
+    std::transform(vertices.begin(), vertices.end(), std::back_inserter(curvatures), [](const Vertex& v) { return v.indexed_curv; });
 
-    for (auto& v : vertices) {
-        // If we want to exclude this vertex
-        if (v.exclude)
-            continue;
-
-        count++;
-        curv += v.indexed_curv;
-    }
-
-    return curv / count; 
+    return std::accumulate(curvatures.begin(), curvatures.end(), 0.0) / static_cast<double>(curvatures.size());
 }
 
 // Calculates area strain

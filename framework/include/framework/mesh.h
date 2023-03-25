@@ -18,7 +18,7 @@ enum Region {
 	// LFW = Laterior Free Wall
 	// AFW = Anterior Free Wall 
 	// SP = Septal body
-	IFW=1, LFW=2, AFW=2, SP=3
+	IFW=0, LFW=1, AFW=2, SP=3, IGN=4
 };
 
 struct Vertex {
@@ -44,6 +44,9 @@ struct Vertex {
 	}
 	void set_region(Region r) {
 		region = r; 
+	}
+	double get_indexed_curvature() {
+		return indexed_curv; 
 	}
 };
 

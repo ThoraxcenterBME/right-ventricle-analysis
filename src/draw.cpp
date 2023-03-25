@@ -95,7 +95,12 @@ void draw_regions(std::vector<Vertex>& vertices)
 {
     ColorRegion color; 
     for (Vertex& v : vertices) {
-        draw_sphere(v.position, 1e-2f, color.colors[int(v.region)]); 
+        // Don't draw anything for the outflow/inflow outlets.
+        if (int(v.region) == IGN) {
+            continue; 
+        }
+
+        draw_sphere(v.position, 1e-2f, color.colors[v.region]); 
     }
 }
 
