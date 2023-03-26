@@ -18,7 +18,9 @@ enum Region {
 	// LFW = Laterior Free Wall
 	// AFW = Anterior Free Wall 
 	// SP = Septal body
-	IFW=0, LFW=1, AFW=2, SP=3, IGN=4
+	// IGN = Ignored 
+	// UD = Initial value, so we haven't classified it 
+	IFW=0, LFW=1, AFW=2, SP=3, IGN=4, UD=5
 };
 
 struct Vertex {
@@ -33,7 +35,7 @@ struct Vertex {
     bool exclude = false; // whether it should be excluded in the curvature calculation
     [[nodiscard]] constexpr bool operator==(const Vertex&) const noexcept = default;
 	int index; 
-    Region region;  
+    Region region = Region::UD;  
 	
 	// Setters (might remove)
 	void setCurvature(double c) {

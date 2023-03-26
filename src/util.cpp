@@ -534,7 +534,7 @@ std::vector<double> find_regional_curvature(std::vector<Vertex>& vertices)
     std::vector<double> r_vals = {};
     for (auto const& r_curv : regional_curvature) {
         // Calculate average curvature of that region 
-        r_vals.push_back(std::accumulate(r_curv.second.begin(), r_curv.second.end(), 0.0) / r_curv.second.size()); 
+        r_vals.push_back(std::accumulate(r_curv.second.begin(), r_curv.second.end(), 0.0) / static_cast<double>(r_curv.second.size())); 
     }
 
     return r_vals; 
@@ -547,18 +547,25 @@ void center_mesh(std::vector<Vertex>& vertices) {
         std::back_inserter(positions),
         [](const Vertex& v) { return v.position; });
 
+    // Find the center of mass 
     const glm::vec3 center = std::accumulate(std::begin(positions), std::end(positions), glm::vec3(0.0f)) / static_cast<float>(positions.size());
 
-    for (Vertex& v : vertices) {
-        v.position -= center; 
-    }
+    // Center the mesh, so center of mass is at (0, 0, 0)
+    std::transform(vertices.begin(), vertices.end(), vertices.begin(),
+        [&center](Vertex& v) { v.position = v.position - center; return v; });
 }
 
 // Calculates the total indexed curvature 
 double find_indexed_curvature(std::vector<Vertex>& vertices)
 {
-    std::vector<double> curvatures;
-    std::transform(vertices.begin(), vertices.end(), std::back_inserter(curvatures), [](const Vertex& v) { return v.indexed_curv; });
+    std::vector<Vertex> vertices_copy;
+    std::copy_if(vertices.begin(), vertices.end(), std::back_inserter(vertices_copy),
+        [](const Vertex& v) { return !v.exclude; });
+
+    std::vector<double> curvatures(vertices_copy.size());
+    std::transform(vertices_copy.begin(), vertices_copy.end(),
+        curvatures.begin(),
+        [](const Vertex& v) { return v.indexed_curv; });
 
     return std::accumulate(curvatures.begin(), curvatures.end(), 0.0) / static_cast<double>(curvatures.size());
 }
@@ -569,4 +576,11 @@ double find_indexed_curvature(std::vector<Vertex>& vertices)
 double area_strain(double ed_area, double es_area) 
 {
     return 100 * ((es_area - ed_area) / ed_area); 
+}
+
+void set_regional_strain(Strain& strain)
+{
+    for (int i = 0; i < strain.es_areas.size(); i++) {
+        strain.strain_values.push_back(area_strain(strain.ed_areas[i], strain.es_areas[i])); 
+    }
 }

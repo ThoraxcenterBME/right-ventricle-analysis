@@ -24,6 +24,7 @@ DISABLE_WARNINGS_POP()
 
 bool show_normal_gui = false; 
 bool draw_regions_gui = false; 
+bool number_vertices = false; 
 
 enum class DiffuseMode {
     None,
@@ -290,6 +291,23 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info,
     ImGui::Spacing();
     ImGui::Separator();
 
+
+    /* ImGui::Checkbox("Number Vertices", &number_vertices);
+    if (number_vertices) {
+        // Draw the vertices and their labels
+        for (int i = 0; i < state.myMesh.vertices.size(); i++) {
+            // Calculate the screen space position of the vertex
+            ImVec2 pos = ImGui::GetIO().DisplaySize / 2.0f + ImVec2(state.myMesh.vertices[i].position.x, state.myMesh.vertices[i].position.y) * 100.0f;
+
+            // Draw the vertex label
+            char label[32];
+            sprintf(label, "%d", i);
+            ImGui::GetWindowDrawList()->AddText(ImGui::GetBackgroundDrawList()->_GetFirstCommand()->ClipRect.Min + pos, ImColor(255, 255, 255), label);
+        }
+    }
+    ImGui::Spacing();
+    ImGui::Separator();*/
+
     // Display other information ...
     ImGui::End();
 }
@@ -339,10 +357,15 @@ void write_to_file(std::string filename, PrintInfo info, int i) {
 
 void write_strain_to_file(std::string filename, Strain strain)
 {
+    set_regional_strain(strain); 
     std::ofstream datafile;
     datafile.open(std::filesystem::path(DATA_DIR) / filename, std::ios_base::app);
-    datafile << "\nGlobal Area Strain \n"; 
-    datafile << strain.global_area_strain; 
+    datafile << "\nGlobal Area Strain, Interior Free Wall Area Strain, Lateral Free Wall Area Strain, Anterior Free Wall Area Strain, Septal Body Area Strain \n"; 
+    
+    datafile << strain.global_area_strain << ", "; 
+    for (auto& a : strain.strain_values) {
+        datafile << a << ", ";
+    }
 
     datafile.close();
 }
@@ -407,14 +430,15 @@ int main_calculations(std::string csvfile)
         // Recording variables for calculating strain 
         if (i == es_index) {
             strain.global_es_area = print_info.surface_area; 
+            strain.es_areas = std::vector<double>(print_info.surface_areas.begin(), print_info.surface_areas.end()); 
         }
         if (i == ed_index) {
             strain.global_ed_area = print_info.surface_area; 
+            strain.ed_areas = std::vector<double>(print_info.surface_areas.begin(), print_info.surface_areas.end()); 
         }
     }
 
     // Output strain calculations
-    strain.global_area_strain = area_strain(strain.global_ed_area, strain.global_es_area);
     write_strain_to_file(csvfile, strain); 
 
     return 0; 
@@ -430,7 +454,7 @@ int main_visual()
 
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt";
-    std::string regions = "new-region.txt";
+    std::string regions = "region-v2.txt";
 
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
     trackball.disableTranslation();
