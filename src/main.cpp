@@ -333,7 +333,7 @@ void write_to_file(std::string filename, PrintInfo info, int i) {
     datafile << i << ", "; 
     datafile << info.volume << ", ";
     datafile << info.surface_area << ", "; 
-    datafile << info.curvature << ", "; 
+    datafile << info.index_curv << ", "; 
    
 
     for (auto& v : info.volumes) {
@@ -362,7 +362,11 @@ void write_strain_to_file(std::string filename, Strain strain)
     datafile.open(std::filesystem::path(DATA_DIR) / filename, std::ios_base::app);
     datafile << "\nGlobal Area Strain, Interior Free Wall Area Strain, Lateral Free Wall Area Strain, Anterior Free Wall Area Strain, Septal Body Area Strain \n"; 
     
+    // Find global area strain 
+    strain.global_area_strain = area_strain(strain.global_ed_area, strain.global_es_area); 
     datafile << strain.global_area_strain << ", "; 
+
+    // Display area strain for each region  
     for (auto& a : strain.strain_values) {
         datafile << a << ", ";
     }
@@ -372,29 +376,29 @@ void write_strain_to_file(std::string filename, Strain strain)
 
 std::string construct_file_string(int n) {
     if (n / 10 < 1) {
-        return "Young healthy volunteer_00" + std::to_string(n) + ".obj";
+        return "RV beutel young healthy volunteer BPD 7_00" + std::to_string(n) + ".obj";
     } else {
-        return "Young healthy volunteer_0" + std::to_string(n) + ".obj";
+        return "RV beutel young healthy volunteer BPD 7_0" + std::to_string(n) + ".obj";
     }
 }
 
 /*
 * This main function for calculations
 */
-int main_calculations(std::string csvfile)
+int main_calculations(std::string csvfile, int frames)
 {
     // File name strings 
     std::string fileName;
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt"; 
-    std::string regions = "region.txt";
-
+    std::string regions = "region-v2.txt";
+    
     // Variables used for calculating strain 
-    int es_index = 14;
-    int ed_index = 37;
+    double min_vol = 10000; // end systole
+    double max_vol = 0;  // end diastole
     Strain strain = {}; 
    
-    for (int i = 0; i <= 38; i++) {      
+    for (int i = 0; i <= frames; i++) {      
         fileName = construct_file_string(i); 
         // Load the mesh file and ring file
         std::ifstream ifile;
@@ -427,13 +431,18 @@ int main_calculations(std::string csvfile)
         print_info.minmax = find_min_max(rv.vertices); 
         write_to_file(csvfile, print_info, i);
 
-        // Recording variables for calculating strain 
-        if (i == es_index) {
+        // Recording variables for calculating strain
+        if (i == 0) {
+            min_vol = print_info.volume; 
+            max_vol = print_info.volume; 
+        } 
+        else if (print_info.volume < min_vol) { // end-systole, min. volume
             strain.global_es_area = print_info.surface_area; 
+            min_vol = print_info.volume; 
             strain.es_areas = std::vector<double>(print_info.surface_areas.begin(), print_info.surface_areas.end()); 
-        }
-        if (i == ed_index) {
+        } else if (print_info.volume > max_vol) { // end diastole, max. volume
             strain.global_ed_area = print_info.surface_area; 
+            max_vol = print_info.volume; 
             strain.ed_areas = std::vector<double>(print_info.surface_areas.begin(), print_info.surface_areas.end()); 
         }
     }
@@ -535,5 +544,6 @@ int main_visual()
 int main(int argc, char** argv)
 {
     // Either main_calculations or main_visual
-    main_visual();
+    main_visual(); 
+    // main_calculations("healthy.csv", 65);
 }

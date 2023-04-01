@@ -584,3 +584,45 @@ void set_regional_strain(Strain& strain)
         strain.strain_values.push_back(area_strain(strain.ed_areas[i], strain.es_areas[i])); 
     }
 }
+
+// Calculate the longitudinal strain 
+// Note: subtract es from ed!! (min  - max) / max
+double longitudinal_strain_vertex(int vertex,
+    std::vector<Vertex>& vertices_es,
+    std::vector<Vertex>& vertices_ed,
+    glm::vec3& l_axis) 
+{
+    // Get current vertex from ED 
+    auto& current_vertex = vertices_ed[vertex]; 
+    // Define origin as the current vertex's position 
+    auto& origin = current_vertex.position; 
+    // List of displacement vectors 
+    std::vector<double> u_vectors = {};
+
+    for (int i = 0; i < current_vertex.ringCount; i++) {
+        // Find the displacement vectors of the opposite vertex in ES and ED. 
+        auto ed_vector = vertices_ed[current_vertex.ring[i]].position - origin; 
+        auto es_vector = vertices_es[current_vertex.ring[i]].position - origin; 
+
+        // Map both onto the longitudinal axis and find length (nominal strain)
+        auto proj_ed_vector = glm::length((glm::dot(ed_vector, l_axis) / glm::dot(l_axis, l_axis)) * l_axis); 
+        auto proj_es_vector = glm::length((glm::dot(es_vector, l_axis) / glm::dot(l_axis, l_axis)) * l_axis); 
+
+        // Subtract two vectors 
+        u_vectors.push_back(proj_es_vector - proj_ed_vector); 
+    }
+
+    // Sum it up 
+    return std::accumulate(u_vectors.begin(), u_vectors.end(), 0.0); 
+}
+
+// Find longitudinal strain of the entire mesh 
+double longitudinal_strain(std::vector<Vertex>& vertices_es,
+    std::vector<Vertex>& vertices_ed,
+    glm::vec3& l_axis)
+{
+    auto strain = 0.0; 
+
+
+}
+
