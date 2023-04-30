@@ -355,13 +355,16 @@ void write_to_file(std::string filename, PrintInfo info, int i) {
     datafile.close(); 
 }
 
-void write_strain_to_file(std::string filename, Strain strain)
+void write_strain_to_file(std::string filename, Strain& strain)
 {
     set_regional_strain(strain); 
     std::ofstream datafile;
     datafile.open(std::filesystem::path(DATA_DIR) / filename, std::ios_base::app);
-    datafile << "\nGlobal Area Strain, Interior Free Wall Area Strain, Lateral Free Wall Area Strain, Anterior Free Wall Area Strain, Septal Body Area Strain \n"; 
     
+    // Write the header 
+    datafile << "\nGlobal Area Strain, Inferior Free Wall Area Strain, Lateral Free Wall Area Strain, "
+             << "Anterior Free Wall Area Strain, Septal Body Area Strain \n"; 
+   
     // Find global area strain 
     strain.global_area_strain = area_strain(strain.global_ed_area, strain.global_es_area); 
     datafile << strain.global_area_strain << ", "; 
@@ -371,14 +374,34 @@ void write_strain_to_file(std::string filename, Strain strain)
         datafile << a << ", ";
     }
 
+     datafile << "\n\nGlobal Longitudinal Strain, Inferior Free Wall Longitudinal Strain, Lateral Free Wall Longitudinal Strain, Anterior Free Wall Longitudinal Strain, Septal Body Longitudinal Strain\n"; 
+
+    // Find global and regional longitudinal strain 
+    strain.longitudinal_strain = longitudinal_strain(strain.vertices_es, strain.vertices_ed, strain.long_axis, strain); 
+
+    datafile << strain.longitudinal_strain << ", "; 
+
+    // Display longitudinal strain for each region 
+    for (auto& la : strain.l_strain_values) {
+        datafile << la << ", "; 
+    }
+
     datafile.close();
 }
 
 std::string construct_file_string(int n) {
+    // healthy-1: Young healthy volunteer_00 (38)
+    // healthy-2: RV beutel young healthy volunteer BPD 7_00 (65)
+    // healthy-3: RV beutel young healthy volunteer BPD 15_00 (51)
+    // healthy-4: RV beutel young healthy volunteer BPD 16_00 (37)
+    // healthy-5: RV beutel young healthy volunteer BPD 31_00 (78)
+    // tof-1: ToF RV Beutel_00 (41)
+    // tof-2: ToF_2_00 (21) 
+    // asd-1: Post_ASD_1_00 (34)
     if (n / 10 < 1) {
-        return "RV beutel young healthy volunteer BPD 7_00" + std::to_string(n) + ".obj";
+        return "healthy-2/RV beutel young healthy volunteer BPD 7_00" + std::to_string(n) + ".obj ";
     } else {
-        return "RV beutel young healthy volunteer BPD 7_0" + std::to_string(n) + ".obj";
+        return "healthy-2/RV beutel young healthy volunteer BPD 7_0" + std::to_string(n) + ".obj";
     }
 }
 
@@ -397,7 +420,12 @@ int main_calculations(std::string csvfile, int frames)
     double min_vol = 10000; // end systole
     double max_vol = 0;  // end diastole
     Strain strain = {}; 
-   
+
+    // For defining the long axis.
+    int lower_point = 906;
+    int c1 = 102;
+    int c2 = 63;
+
     for (int i = 0; i <= frames; i++) {      
         fileName = construct_file_string(i); 
         // Load the mesh file and ring file
@@ -432,22 +460,21 @@ int main_calculations(std::string csvfile, int frames)
         write_to_file(csvfile, print_info, i);
 
         // Recording variables for calculating strain
-        if (i == 0) {
-            min_vol = print_info.volume; 
-            max_vol = print_info.volume; 
-        } 
-        else if (print_info.volume < min_vol) { // end-systole, min. volume
+        if (print_info.volume < min_vol) { // end-systole, min. volume
             strain.global_es_area = print_info.surface_area; 
             min_vol = print_info.volume; 
             strain.es_areas = std::vector<double>(print_info.surface_areas.begin(), print_info.surface_areas.end()); 
+            strain.vertices_es = std::vector<Vertex>(rv.vertices.begin(), rv.vertices.end()); 
         } else if (print_info.volume > max_vol) { // end diastole, max. volume
             strain.global_ed_area = print_info.surface_area; 
             max_vol = print_info.volume; 
             strain.ed_areas = std::vector<double>(print_info.surface_areas.begin(), print_info.surface_areas.end()); 
+            strain.vertices_ed = std::vector<Vertex>(rv.vertices.begin(), rv.vertices.end());       
+            strain.long_axis = find_long_axis(rv.vertices, lower_point, c1, c2); 
         }
     }
-
-    // Output strain calculations
+    
+    // Output and _sets_ strain calculations 
     write_strain_to_file(csvfile, strain); 
 
     return 0; 
@@ -459,7 +486,7 @@ int main_calculations(std::string csvfile, int frames)
 int main_visual()
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(1000), OpenGLVersion::GL2 };
-    std::string fileName = "Young healthy volunteer_000.obj";
+    std::string fileName = "tof-1/ToF RV Beutel_017.obj";
 
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt";
@@ -544,6 +571,6 @@ int main_visual()
 int main(int argc, char** argv)
 {
     // Either main_calculations or main_visual
-    main_visual(); 
-    // main_calculations("healthy.csv", 65);
+    // main_visual(); 
+    main_calculations("data.csv", 65);
 }

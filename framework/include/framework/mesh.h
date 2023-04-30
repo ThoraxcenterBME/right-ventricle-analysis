@@ -14,7 +14,7 @@ DISABLE_WARNINGS_POP()
 
 // Enumerated type for indicating the region the vertex belongs to 
 enum Region {
-	// IFW = Interior Free Wall
+	// IFW = Inferior Free Wall
 	// LFW = Laterior Free Wall
 	// AFW = Anterior Free Wall 
 	// SP = Septal body
@@ -32,7 +32,9 @@ struct Vertex {
 	int ringCount; 
 	double curvature;
     double indexed_curv;
-    bool exclude = false; // whether it should be excluded in the curvature calculation
+    double long_strain; 
+    
+	bool exclude = false; // whether it should be excluded in the curvature calculation
     [[nodiscard]] constexpr bool operator==(const Vertex&) const noexcept = default;
 	int index; 
     Region region = Region::UD;  

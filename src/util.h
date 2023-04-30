@@ -26,6 +26,14 @@ struct Strain {
     std::vector<double> ed_areas; 
     std::vector<double> es_areas; 
     std::vector<double> strain_values; 
+
+    // Longitudinal/Axial Strain 
+    glm::vec3 long_axis; 
+    glm::vec3 axial_axis; 
+    double longitudinal_strain; 
+    std::vector<Vertex> vertices_ed; 
+    std::vector<Vertex> vertices_es; 
+    std::vector<double> l_strain_values;
 };
 
 // Info for displaying on GUI
@@ -67,3 +75,5 @@ double find_indexed_curvature(std::vector<Vertex>& vertices);
 std::pair<double, double> find_min_max(std::vector<Vertex>& vertices); 
 double area_strain(double ed_area, double es_area);
 void set_regional_strain(Strain& strain); 
+double longitudinal_strain(std::vector<Vertex>& vertices_es, std::vector<Vertex>& vertices_ed, glm::vec3& l_axis, Strain& strain); 
+glm::vec3 find_long_axis(std::vector<Vertex>& vertices, int lower_point, int c1, int c2);
