@@ -173,10 +173,12 @@ void mark_excluded(std::string& name, std::vector<Vertex>& vertices)
         std::istringstream lines(linebuf);
         int key;
         lines >> key; 
-        vertices[key].exclude = true; 
+        vertices[key].exclude = true;
+        vertices[key].set_region(Region::IGN); 
     }
 }
 
+// Marks vertices to the corresponding region
 void mark_regions(std::string& in, std::vector<Vertex>& vertices)
 {   
     std::ifstream myfile;
@@ -190,34 +192,24 @@ void mark_regions(std::string& in, std::vector<Vertex>& vertices)
         int key; 
         lines >> key; 
 
-        // Inflow Tract
-        if (lineType == "it") {
-            vertices[key].set_region(Region::IT); 
+        // Inferior Free Wall
+        if (lineType == "ifw") {
+            vertices[key].set_region(Region::IFW); 
             continue; 
         }
-        // Outflow Tract
-        if (lineType == "ot") {
-            vertices[key].set_region(Region::OT);
+        // Lateral Free Wall
+        if (lineType == "lfw") {
+            vertices[key].set_region(Region::LFW);
+            continue; 
+        }
+        // Anterior Free Wall
+        if (lineType == "afw") {
+            vertices[key].set_region(Region::AFW);
             continue; 
         }
         // Septal Body
-        if (lineType == "sb") {
-            vertices[key].set_region(Region::SB);
-            continue; 
-        }
-        // Free wall Body
-        if (lineType == "fb") {
-            vertices[key].set_region(Region::FB);
-            continue; 
-        }
-        // Septal Apex
-        if (lineType == "sa") {
-            vertices[key].set_region(Region::SA);
-            continue; 
-        }
-        // Free-wall Apex
-        if (lineType == "fa") {
-            vertices[key].set_region(Region::FA);
+        if (lineType == "sp") {
+            vertices[key].set_region(Region::SP);
             continue; 
         }
     }

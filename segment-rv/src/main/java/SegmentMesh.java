@@ -8,8 +8,64 @@ import java.util.Scanner;
 import java.util.Set;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class SegmentMesh {
+
+    // Simple code used to generate the file used in cpp program for grouping regions
+    static void uniqueRegion(Scanner sc) {
+        HashMap<String, Set<Integer>> regions = new HashMap<>();
+
+        regions.put("ifw", new HashSet<>());
+        regions.put("lfw", new HashSet<>());
+        regions.put("afw", new HashSet<>());
+
+        while (sc.hasNextLine()) {
+            String line = sc.nextLine();
+            if (line.startsWith("ifw")) {
+                String[] ln = line.split(" {2}");
+                regions.get("ifw").add(Integer.parseInt(ln[1]));
+            }
+            else if (line.startsWith("afw")) {
+                String[] ln = line.split(" {2}");
+                regions.get("afw").add(Integer.parseInt(ln[1]));
+            }
+            else if (line.startsWith("lfw")) {
+                String[] ln = line.split(" {2}");
+                regions.get("lfw").add(Integer.parseInt(ln[1]));
+            }
+        }
+
+        var regionIFW = regions.get("ifw");
+        var regionAFW = regions.get("afw");
+        var regionLFW = regions.get("lfw");
+
+        for (var i : regionIFW) {
+            System.out.println("ifw  " + i);
+        }
+
+        System.out.println("\n");
+
+        for (var i : regionLFW) {
+            System.out.println("lfw  " + i);
+        }
+        System.out.println("\n");
+
+        for (var i : regionAFW) {
+            System.out.println("afw  " + i);
+        }
+        var indicesAll = IntStream.rangeClosed(0, 937)
+            .boxed()
+            .filter(i -> !regionAFW.contains(i) && !regionIFW.contains(i)  && !regionLFW.contains(i))
+            .collect(Collectors.toList());
+
+        System.out.println("\n");
+        for (var i : indicesAll) {
+            System.out.println("sp  " + i);
+        }
+
+    }
 
     static Set<Edge> makeEdges(Scanner sc) throws FileNotFoundException {
         Set<Edge> edges = new HashSet<>();

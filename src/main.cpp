@@ -2,6 +2,7 @@
 #include "util.h"
 #include "shade.h"
 #include "mesh_loader.h"
+#include "strain_calculation.h"
 // Disable warnings in third-party code.
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
@@ -24,6 +25,7 @@ DISABLE_WARNINGS_POP()
 
 bool show_normal_gui = false; 
 bool draw_regions_gui = false; 
+bool number_vertices = false; 
 
 enum class DiffuseMode {
     None,
@@ -67,31 +69,6 @@ struct ProgramState {
     unsigned selectedVertex = 0xFFFFFFFF;
     bool showSelectedVertex = true;
     MaterialInformation materialInformation;
-};
-
-struct RVInfo {
-    float volume;
-    float surfaceArea; 
-    float curvature; 
-    float radius; 
-    float region1; 
-    float region2; 
-    float region3; 
-    float region4; 
-    float region5; 
-    float region6; 
-};
-
-struct PrintInfo {
-    float volume;
-    float surface_area;
-    float curvature;
-    float index_curv; 
-    float min_curv; 
-    float max_curv; 
-    std::vector<double> curvatures; 
-    std::vector<double> volumes; 
-    std::vector<double> surface_areas; 
 };
 
 glm::vec3 computeLighting(const ProgramState& programState, unsigned vertexIndex, const glm::vec3& cameraPos, const Light& light)
@@ -241,6 +218,7 @@ void computeLighting(const ProgramState& state, const glm::vec3& cameraPos, std:
     }
 }
 
+
 void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info, 
     std::vector<Ray>& normals)
 {
@@ -290,41 +268,46 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info,
 
 
     // Display Region 1 
-    std::string r1_curvature = "Curvature (Inflow Tract): " + std::to_string(info.region1);
-    ImGui::TextColored(ImVec4(color.c1.x, color.c1.y, color.c1.z, 1.0), r1_curvature.c_str());
+    std::string r1_curvature = "Curvature (Inferior Free Wall): " + std::to_string(info.regional_curvs[0]);
+    ImGui::TextColored(ImVec4(color.colors[0].x, color.colors[0].y, color.colors[2].z, 1.0), r1_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
     // Display Region 2
-    std::string r2_curvature = "Curvature (Outflow Tract): " + std::to_string(info.region2);
-    ImGui::TextColored(ImVec4(color.c2.x, color.c2.y, color.c2.z, 1.0), r2_curvature.c_str());
+    std::string r2_curvature = "Curvature (Lateral Free Wall): " + std::to_string(info.regional_curvs[1]);
+    ImGui::TextColored(ImVec4(color.colors[1].x, color.colors[1].y, color.colors[1].z, 1.0), r2_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
     // Display Region 3
-    std::string r3_curvature = "Curvature (Septal Body): " + std::to_string(info.region3);
-    ImGui::TextColored(ImVec4(color.c3.x, color.c3.y, color.c3.z, 1.0), r3_curvature.c_str());
+    std::string r3_curvature = "Curvature (Anterior Free Wall): " + std::to_string(info.regional_curvs[2]);
+    ImGui::TextColored(ImVec4(color.colors[2].x, color.colors[2].y, color.colors[2].z, 1.0), r3_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
 
     // Display Region 4
-    std::string r4_curvature = "Curvature (Free-wall Body): " + std::to_string(info.region4);
-    ImGui::TextColored(ImVec4(color.c4.x, color.c4.y, color.c4.z, 1.0), r4_curvature.c_str());
+    std::string r4_curvature = "Curvature (Septal Body): " + std::to_string(info.regional_curvs[3]);
+    ImGui::TextColored(ImVec4(color.colors[3].x, color.colors[3].y, color.colors[3].z, 1.0), r4_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
-    // Display Region 5
-    std::string r5_curvature = "Curvature (Septal Apex): " + std::to_string(info.region5);
-    ImGui::TextColored(ImVec4(color.c5.x, color.c5.y, color.c5.z, 1.0), r5_curvature.c_str());
-    ImGui::Spacing();
-    ImGui::Separator();
 
-    // Display Region 6
-    std::string r6_curvature = "Curvature (Free-wall Apex): " + std::to_string(info.region6);
-    ImGui::TextColored(ImVec4(color.c6.x, color.c6.y, color.c6.z, 1.0), r6_curvature.c_str());
+    /* ImGui::Checkbox("Number Vertices", &number_vertices);
+    if (number_vertices) {
+        // Draw the vertices and their labels
+        for (int i = 0; i < state.myMesh.vertices.size(); i++) {
+            // Calculate the screen space position of the vertex
+            ImVec2 pos = ImGui::GetIO().DisplaySize / 2.0f + ImVec2(state.myMesh.vertices[i].position.x, state.myMesh.vertices[i].position.y) * 100.0f;
+
+            // Draw the vertex label
+            char label[32];
+            sprintf(label, "%d", i);
+            ImGui::GetWindowDrawList()->AddText(ImGui::GetBackgroundDrawList()->_GetFirstCommand()->ClipRect.Min + pos, ImColor(255, 255, 255), label);
+        }
+    }
     ImGui::Spacing();
-    ImGui::Separator();
+    ImGui::Separator();*/
 
     // Display other information ...
     ImGui::End();
@@ -336,23 +319,22 @@ void printHelp()
     std::cout << "SPACE - replaces mouse click for selection, will then call your light placement function" << std::endl;
 }
 
+// Change 
 void set_regional(RVInfo& info, std::vector<Vertex>& vertices) {
     std::vector<double> curvatures = find_regional_curvature(vertices); 
-    info.region1 = curvatures[0];
-    info.region2 = curvatures[1];
-    info.region3 = curvatures[2];
-    info.region4 = curvatures[3];
-    info.region5 = curvatures[4];
-    info.region6 = curvatures[5];
+
+    for (auto& c : curvatures) {
+        info.regional_curvs.push_back(c);
+    }
 }
 
-void write_to_file(std::string filename, PrintInfo info, int i, std::pair<double, double>& minmax) {
+void write_to_file(std::string filename, PrintInfo info, int i) {
     std::ofstream datafile; 
     datafile.open(std::filesystem::path(DATA_DIR) / filename, std::ios_base::app); 
     datafile << i << ", "; 
     datafile << info.volume << ", ";
     datafile << info.surface_area << ", "; 
-    datafile << info.curvature << ", "; 
+    datafile << info.index_curv << ", "; 
    
 
     for (auto& v : info.volumes) {
@@ -366,49 +348,130 @@ void write_to_file(std::string filename, PrintInfo info, int i, std::pair<double
     for (auto& c : info.curvatures) {
         datafile << c << ", "; 
     }
-    datafile << minmax.first << ", "; 
-    datafile << minmax.second; 
+    datafile << info.minmax.first << ", "; 
+    datafile << info.minmax.second; 
 
     datafile << "\n"; 
 
     datafile.close(); 
 }
 
-std::string construct_file_string(int n) {
+std::string construct_file_string(int n)
+{
+    // healthy-1: Young healthy volunteer_00 (38)
+    // healthy-2: RV beutel young healthy volunteer BPD 7_00 (65)
+    // healthy-3: RV beutel young healthy volunteer BPD 15_00 (51)
+    // healthy-4: RV beutel young healthy volunteer BPD 16_00 (37)
+    // healthy-5: RV beutel young healthy volunteer BPD 31_00 (78)
+    // tof-1: ToF RV Beutel_00 (41)
+    // tof-2: ToF_2_00 (21)
+    // asd-1: Post_ASD_1_00 (34)
     if (n / 10 < 1) {
-        return "Young healthy volunteer_00" + std::to_string(n) + ".obj";
+        return "healthy-1/Young healthy volunteer_00" + std::to_string(n) + ".obj";
     } else {
-        return "Young healthy volunteer_0" + std::to_string(n) + ".obj";
+        return "healthy-1/Young healthy volunteer_0" + std::to_string(n) + ".obj";
     }
+}
+
+/*
+ * Method for postprocessing RV beutel mesh
+ */
+Mesh get_mesh(std::string& filename)
+{
+    // Data files that encode regional RV information
+    std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
+    std::string exclude_vertices = "exclude.txt";
+    std::string regions = "region-v2.txt";
+
+    std::ifstream ifile;
+    ifile.open(std::filesystem::path(DATA_DIR) / filename);
+    Mesh rv = loadMeshRV(ifile);
+    loadRingFromFile(ring, rv.vertices);
+
+    // Extra post-processing for RV regions
+    center_mesh(rv.vertices);
+    mark_excluded(exclude_vertices, rv.vertices);
+    mark_regions(regions, rv.vertices);
+
+    return rv;
+}
+
+void write_strain_to_file(std::string filename, Strain& strain)
+{
+    set_regional_area_strain(strain); 
+    std::ofstream datafile;
+    datafile.open(std::filesystem::path(DATA_DIR) / filename, std::ios_base::app);
+    
+    // Write the header 
+    datafile << "\nGlobal Area Strain, Inferior Free Wall Area Strain, Lateral Free Wall Area Strain, "
+             << "Anterior Free Wall Area Strain, Septal Body Area Strain \n"; 
+   
+    // Find global area strain 
+    strain.global_area_strain = area_strain(strain.global_ed_area, strain.global_es_area); 
+    datafile << strain.global_area_strain << ", "; 
+
+    // Display area strain for each region  
+    for (auto& a : strain.strain_values) {
+        datafile << a << ", ";
+    }
+
+     datafile << "\n\nGlobal Longitudinal Strain, Inferior Free Wall Longitudinal Strain, Lateral Free Wall Longitudinal Strain, Anterior Free Wall Longitudinal Strain, Septal Body Longitudinal Strain\n"; 
+
+    // Find global and regional longitudinal strain 
+    std::string meshFile = construct_file_string(0); 
+    Mesh rv = get_mesh(meshFile); 
+    strain.longitudinal_strain = longitudinal_strain(strain.vertices_es, strain.vertices_ed, rv.triangles, rv.vertexToTri, strain.long_axis, strain); 
+
+    datafile << strain.longitudinal_strain << ", "; // global longitudinal strain
+    for (auto& la : strain.l_strain_values) {
+        datafile << la << ", "; 
+    }
+
+    datafile << "\n\nGlobal Radial Strain, Inferior Free Wall Radial Strain, Lateral Free Wall Radial Strain, Anterior Free Wall Radial Strain, Septal Body Radial Strain\n"; 
+    glm::vec3 r_axis = find_radial_axis(strain.vertices_ed, strain.long_axis); 
+    strain.radial_strain = radial_strain(strain.vertices_es, strain.vertices_ed, r_axis, strain); 
+
+    datafile << strain.radial_strain << ", "; // global radial strain
+    for (auto& la : strain.r_strain_values) {
+        datafile << la << ", ";
+    }
+
+    datafile << "\n\nGlobal Circumferential Strain, Inferior Free Wall Circumferential Strain, Lateral Free Wall Circumferential Strain, Anterior Free Wall Circumferential Strain, Septal Body Circumferential Strain\n"; 
+    glm::vec3 c_axis = find_circumferential_axis(strain.vertices_ed, strain.long_axis, r_axis);  
+    strain.circumferential_strain = circumferential_strain(strain.vertices_es, strain.vertices_ed, c_axis, strain); 
+
+    datafile << strain.circumferential_strain << ", "; // global circumferential strain
+    for (auto& la : strain.c_strain_values) {
+        datafile << la << ", ";
+    }
+
+    datafile.close();
 }
 
 /*
 * This main function for calculations
 */
-int main_calculations(std::string filename)
+int main_calculations(std::string csvfile, int frames)
 {
+    // File name strings 
     std::string fileName;
-    std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
-    std::string exclude_vertices = "exclude.txt"; 
-    std::string regions = "region.txt";
+    
+    // Variables used for calculating strain 
+    double min_vol = 10000; // end systole
+    double max_vol = 0;  // end diastole
+    Strain strain = {}; 
 
-    for (int i = 0; i <= 38; i++) {      
+    // For defining the long axis.
+    int lower_point = 906;
+    int c1 = 102;
+    int c2 = 63;
+
+    for (int i = 0; i <= frames; i++) {      
         fileName = construct_file_string(i); 
-        // Load the mesh file and ring file
-        std::ifstream ifile;
-        ifile.open(std::filesystem::path(DATA_DIR) / fileName);
-        Mesh rv = loadMeshRV(ifile);
-        loadRingFromFile(ring, rv.vertices);
+        Mesh rv = get_mesh(fileName); 
 
         // Printing Info for CSV file
         PrintInfo print_info = {}; 
-
-        // Extra processing needed for RV Beutel
-        if (rv.vertices.size() > 937) {
-            center_mesh(rv.vertices);
-            mark_excluded(exclude_vertices, rv.vertices);
-            mark_regions(regions, rv.vertices);
-        }
 
         // Calculate global quantities 
         print_info.volume = find_volume(rv.triangles, rv.vertices) / 1000;
@@ -422,9 +485,27 @@ int main_calculations(std::string filename)
         print_info.surface_areas = regional_surface_areas(rv.vertices, rv.triangles, rv.vertexToTri); 
 
         // Write to CSV file
-        auto minmax = find_min_max(rv.vertices); 
-        write_to_file(filename, print_info, i, minmax); 
+        print_info.minmax = find_min_max(rv.vertices); 
+        write_to_file(csvfile, print_info, i);
+
+        // Recording variables for calculating strain
+        if (print_info.volume < min_vol) { // end-systole, min. volume
+            strain.global_es_area = print_info.surface_area; 
+            min_vol = print_info.volume; 
+            strain.es_areas = std::vector<double>(print_info.surface_areas.begin(), print_info.surface_areas.end()); 
+            strain.vertices_es = std::vector<Vertex>(rv.vertices.begin(), rv.vertices.end()); 
+        } else if (print_info.volume > max_vol) { // end diastole, max. volume
+            strain.global_ed_area = print_info.surface_area; 
+            max_vol = print_info.volume; 
+            strain.ed_areas = std::vector<double>(print_info.surface_areas.begin(), print_info.surface_areas.end()); 
+            strain.vertices_ed = std::vector<Vertex>(rv.vertices.begin(), rv.vertices.end());       
+            strain.long_axis = find_long_axis(rv.vertices, lower_point, c1, c2); 
+        }
     }
+    
+    // Output and _sets_ strain calculations 
+    write_strain_to_file(csvfile, strain); 
+
     return 0; 
 }
 
@@ -434,11 +515,11 @@ int main_calculations(std::string filename)
 int main_visual()
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(1000), OpenGLVersion::GL2 };
-    std::string fileName = "Young healthy volunteer_000.obj";
+    std::string fileName = "tof-1/ToF RV Beutel_017.obj";
 
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt";
-    std::string regions = "region.txt";
+    std::string regions = "region-v2.txt";
 
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
     trackball.disableTranslation();
@@ -456,11 +537,12 @@ int main_visual()
     // Extra processing needed for RV Beutel
     if (rv.vertices.size() > 937) {
         center_mesh(rv.vertices);
-        mark_excluded(exclude_vertices, rv.vertices);
         mark_regions(regions, rv.vertices);
         scale_mesh(state.myMesh.vertices);
         center_mesh(state.myMesh.vertices);
         mark_regions(regions, state.myMesh.vertices);
+        mark_excluded(exclude_vertices, state.myMesh.vertices); 
+        mark_excluded(exclude_vertices, rv.vertices);
     }
 
     // Create background and lights for mesh 
@@ -518,5 +600,6 @@ int main_visual()
 int main(int argc, char** argv)
 {
     // Either main_calculations or main_visual
-    main_visual();
+    // main_visual(); 
+    main_calculations("data.csv", 38);
 }

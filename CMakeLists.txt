@@ -12,7 +12,8 @@ find_package(OpenGL REQUIRED)
 
 add_executable(ShadingAssignment
 	"src/main.cpp"
-	"src/draw.cpp" "src/mesh_loader.h" "src/mesh_loader.cpp" "src/util.h" "src/util.cpp")
+	"src/draw.cpp" "src/mesh_loader.h" "src/mesh_loader.cpp" "src/util.h" "src/util.cpp" 
+	"src/strain_calculation.h" "src/strain_calculation.cpp")
 target_compile_features(ShadingAssignment PRIVATE cxx_std_20)
 target_link_libraries(ShadingAssignment PRIVATE CGFramework OpenGL::GLU)
 enable_sanitizers(ShadingAssignment)

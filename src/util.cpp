@@ -6,6 +6,8 @@
 #include <glm/gtc/reciprocal.hpp>
 #include <glm/gtx/vector_angle.hpp>
 #include <map>
+#include <algorithm>
+#include <functional>
 #include <math.h>
 #include <numeric>
 #include <set>
@@ -97,54 +99,44 @@ double find_surface_area_regional(std::vector<glm::uvec3>& triangles,
 
     return 0.5 * sa;
 }
+// TODO Change
+std::vector<double> regional_surface_areas(std::vector<Vertex>& vs,
+    std::vector<glm::uvec3>& ts,
+    std::map<int, std::vector<int>>& vertexToTri)
+{
+    // Find the triangles which belong to a certain region
+    auto ifw_region = find_all_in_region(vs, ts, Region::IFW);
+    auto lfw_region = find_all_in_region(vs, ts, Region::LFW);
+    auto afw_region = find_all_in_region(vs, ts, Region::AFW);
+    auto sp_region = find_all_in_region(vs, ts, Region::SP);
 
+    // Find regional surface area
+    double sa_reg_ifw = find_surface_area_regional(ts, vs, ifw_region);
+    double sa_reg_lfw = find_surface_area_regional(ts, vs, lfw_region);
+    double sa_reg_afw = find_surface_area_regional(ts, vs, afw_region);
+    double sa_reg_sp = find_surface_area_regional(ts, vs, sp_region);
+   
+    return { sa_reg_ifw, sa_reg_lfw, sa_reg_afw, sa_reg_sp };
+}
+
+// TODO Change 
 std::vector<double> regional_volumes(std::vector<Vertex>& vs,
     std::vector<glm::uvec3>& ts,
     std::map<int, std::vector<int>>& vertexToTri)
 {
-    // Find which triangles belong to which region 
-    auto it_region = find_all_in_region(vs, ts, Region::IT); 
-    auto ot_region = find_all_in_region(vs, ts, Region::OT); 
-    auto sb_region = find_all_in_region(vs, ts, Region::SB); 
-    auto fb_region = find_all_in_region(vs, ts, Region::FB);
-    auto sa_region = find_all_in_region(vs, ts, Region::SA);
-    auto fa_region = find_all_in_region(vs, ts, Region::FA); 
+    // Find regional surface area 
+    auto regional_sa = regional_surface_areas(vs, ts, vertexToTri); 
 
     // Determine the scaling factor 
     double ratio_scale = find_volume(ts, vs) / find_surface_area(ts, vs);
 
     // Determine regional volumes 
-    double v_reg_it = ratio_scale * find_surface_area_regional(ts, vs, it_region);
-    double v_reg_ot = ratio_scale * find_surface_area_regional(ts, vs, ot_region);
-    double v_reg_sb = ratio_scale * find_surface_area_regional(ts, vs, sb_region);
-    double v_reg_fb = ratio_scale * find_surface_area_regional(ts, vs, fb_region);
-    double v_reg_sa = ratio_scale * find_surface_area_regional(ts, vs, sa_region);
-    double v_reg_fa = ratio_scale * find_surface_area_regional(ts, vs, fa_region);
+    double v_reg_ifw = ratio_scale * regional_sa[int(Region::IFW)];
+    double v_reg_lfw = ratio_scale * regional_sa[int(Region::LFW)];
+    double v_reg_afw = ratio_scale * regional_sa[int(Region::AFW)];
+    double v_reg_sp = ratio_scale * regional_sa[int(Region::SP)];
 
-    return { v_reg_it, v_reg_ot, v_reg_sb, v_reg_fb, v_reg_sa, v_reg_fa };
-}
-
-std::vector<double> regional_surface_areas(std::vector<Vertex>& vs,
-    std::vector<glm::uvec3>& ts,
-    std::map<int, std::vector<int>>& vertexToTri)
-{
-    // Find the triangles which belong to a certain region 
-    auto it_region = find_all_in_region(vs, ts, Region::IT);
-    auto ot_region = find_all_in_region(vs, ts, Region::OT);
-    auto sb_region = find_all_in_region(vs, ts, Region::SB);
-    auto fb_region = find_all_in_region(vs, ts, Region::FB);
-    auto sa_region = find_all_in_region(vs, ts, Region::SA);
-    auto fa_region = find_all_in_region(vs, ts, Region::FA); 
-
-    // Find regional surface area 
-    double sa_reg_it = find_surface_area_regional(ts, vs, it_region);
-    double sa_reg_ot = find_surface_area_regional(ts, vs, ot_region);
-    double sa_reg_sb = find_surface_area_regional(ts, vs, sb_region);
-    double sa_reg_fb = find_surface_area_regional(ts, vs, fb_region);
-    double sa_reg_sa = find_surface_area_regional(ts, vs, sa_region);
-    double sa_reg_fa = find_surface_area_regional(ts, vs, fa_region);
-
-    return { sa_reg_it, sa_reg_ot, sa_reg_sb, sa_reg_fb, sa_reg_sa, sa_reg_fa };
+    return { v_reg_ifw, v_reg_lfw, v_reg_afw, v_reg_sp };
 }
 
 // Checks whether a triangle has an obtuse angle 
@@ -365,23 +357,27 @@ std::vector<Ray> findLaplaceRays(std::vector<glm::uvec3>& triangles,
     return laplace; 
 }
 
+void set_value_indexed_curvature(Vertex& v, double idx_curv)
+{
+    v.indexed_curv = idx_curv;
+}
+
 // Sets the indexed curvature (to be completed)
 void set_indexed_curvature(std::vector<glm::uvec3>& triangles,
     std::vector<Vertex>& vertices,
     std::map<int, std::vector<int>>& vertexToTri)
 {
     // Calculate the regional volumes 
-    auto regional_vols = regional_volumes(vertices, triangles, vertexToTri); 
     auto v_total = find_volume(triangles, vertices); 
     auto k_reg = std::cbrt(4 * M_PI / (3 * v_total)); 
 
-    for (auto& v : vertices) {
-      //  auto k_reg = std::cbrt(4 * M_PI / (3 * regional_vols[(int)v.region]));
-
-        v.set_index_curv(v.curvature / k_reg); 
-    }
+    // Set the indexed curvature values 
+    std::transform(vertices.begin(), vertices.end(), vertices.begin(),
+        [&k_reg](Vertex& v) {
+            set_value_indexed_curvature(v, v.curvature / k_reg);
+            return v;
+        });
 }
-
 
 /*
 * Calculates the global curvature of a mesh
@@ -525,54 +521,21 @@ void scale_mesh(std::vector<Vertex>& vertices) {
 // Find the values that correspond to regional curvature 
 std::vector<double> find_regional_curvature(std::vector<Vertex>& vertices) 
 {
-    std::pair<double, int> cn_1 = { 0, 0 }; 
-    std::pair<double, int> cn_2 = { 0, 0 }; 
-    std::pair<double, int> cn_3 = { 0, 0 }; 
-    std::pair<double, int> cn_4 = { 0, 0 }; 
-    std::pair<double, int> cn_5 = { 0, 0 }; 
-    std::pair<double, int> cn_6 = { 0, 0 }; 
-
+    std::map<Region, std::vector<double>> regional_curvature = {}; 
+   
     for (Vertex& v : vertices) {
         // Do not include in finding regional curvature 
         if (v.exclude)
-            continue; 
-
-        switch (v.region) {
-        case Region::IT:
-            cn_1.first += v.indexed_curv; 
-            cn_1.second++; 
             continue;
-        case Region::OT:
-            cn_2.first += v.indexed_curv;
-            cn_2.second++; 
-            continue;
-        case Region::SB:
-            cn_3.first += v.indexed_curv;
-            cn_3.second++; 
-            continue;
-        case Region::FB:
-            cn_4.first += v.indexed_curv;
-            cn_4.second++; 
-            continue;
-        case Region::SA:
-            cn_5.first += v.indexed_curv;
-            cn_5.second++; 
-            continue;
-        case Region::FA:
-            cn_6.first += v.indexed_curv;
-            cn_6.second++; 
-            continue;
-        }
+        // Add indexed curvature to the corresponding regions
+        regional_curvature[v.region].push_back(v.indexed_curv); 
     }
 
-    std::vector<double> r_vals = {
-        cn_1.first / cn_1.second,
-        cn_2.first / cn_2.second,
-        cn_3.first / cn_3.second,
-        cn_4.first / cn_4.second,
-        cn_5.first / cn_5.second,
-        cn_6.first / cn_6.second,
-    }; 
+    std::vector<double> r_vals = {};
+    for (auto const& r_curv : regional_curvature) {
+        // Calculate average curvature of that region 
+        r_vals.push_back(std::accumulate(r_curv.second.begin(), r_curv.second.end(), 0.0) / static_cast<double>(r_curv.second.size())); 
+    }
 
     return r_vals; 
 }
@@ -584,28 +547,26 @@ void center_mesh(std::vector<Vertex>& vertices) {
         std::back_inserter(positions),
         [](const Vertex& v) { return v.position; });
 
+    // Find the center of mass 
     const glm::vec3 center = std::accumulate(std::begin(positions), std::end(positions), glm::vec3(0.0f)) / static_cast<float>(positions.size());
 
-    for (Vertex& v : vertices) {
-        v.position -= center; 
-    }
+    // Center the mesh, so center of mass is at (0, 0, 0)
+    std::transform(vertices.begin(), vertices.end(), vertices.begin(),
+        [&center](Vertex& v) { v.position = v.position - center; return v; });
 }
 
 // Calculates the total indexed curvature 
 double find_indexed_curvature(std::vector<Vertex>& vertices)
 {
-    auto curv = 0.0;
-    auto count = 0;
+    std::vector<Vertex> vertices_copy;
+    std::copy_if(vertices.begin(), vertices.end(), std::back_inserter(vertices_copy),
+        [](const Vertex& v) { return !v.exclude; });
 
-    for (auto& v : vertices) {
-        // If we want to exclude this vertex
-        if (v.exclude)
-            continue;
+    std::vector<double> curvatures(vertices_copy.size());
+    std::transform(vertices_copy.begin(), vertices_copy.end(),
+        curvatures.begin(),
+        [](const Vertex& v) { return v.indexed_curv; });
 
-        count++;
-        curv += v.indexed_curv;
-    }
-
-    return curv / count; 
+    return std::accumulate(curvatures.begin(), curvatures.end(), 0.0) / static_cast<double>(curvatures.size());
 }
 

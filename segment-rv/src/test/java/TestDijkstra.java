@@ -19,8 +19,8 @@ public class TestDijkstra {
         // Define meta-parameters -> starting point
         int n = 938;
         int m = edges.size();
-        int srcApex = 110;
-        int neighboursApex = 4;
+        int srcApex = 41;
+        int neighboursApex = 228;
 
         // Obtain the dictionary
         var pathApex = SegmentMesh.computeDistances(n, m, srcApex, edges);
@@ -68,11 +68,11 @@ public class TestDijkstra {
         // Define meta-parameters -> starting point
         int n = 938; // 162 938
         int m = edges.size();
-        int s = 102; // 102 63
+        int s = 661; // 102 63
 
         // Obtain the dictionary
         var path = SegmentMesh.computeDistances(n, m, s, edges);
-        int neighbourDistance = 11;
+        int neighbourDistance = 4;
 
         // Sort the dictionary by values, and take only where the distance < R
         // where R is a specified radius
@@ -84,11 +84,18 @@ public class TestDijkstra {
             .collect(Collectors.toList());
 
         // Print out the desired number of neighbours (only the index)
-        String region = "it  ";
+        String region = "ifw  ";
         for (var entry : sorted) {
             System.out.println(region + entry.getKey());
         }
 
+    }
+
+    @Test
+    public void test1() throws FileNotFoundException {
+        File f = new File("region.txt");
+        Scanner sc = new Scanner(f);
+        SegmentMesh.uniqueRegion(sc);
     }
 
 }

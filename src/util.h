@@ -2,16 +2,43 @@
 #include <framework/ray.h>
 #include <iostream>
 
+
 struct ColorRegion {
-    int key; 
-    glm::vec3 c1 = glm::vec3(0.7, 0.1, 0.8);
-    glm::vec3 c2 = glm::vec3(0.9, 0.9, 0.1);
-    glm::vec3 c3 = glm::vec3(0.7, 0.7, 0.8);
-    glm::vec3 c4 = glm::vec3(0.9, 0.5, 0.1);
-    glm::vec3 c5 = glm::vec3(1.0, 1.0, 1.0);
-    glm::vec3 c6 = glm::vec3(1.0, 0.0, 0.0); 
+    // List of colours for coloring each region
+    std::vector<glm::vec3> colors = { 
+        glm::vec3(0.7, 0.1, 0.8), 
+        glm::vec3(0.9, 0.9, 0.1), 
+        glm::vec3(0.7, 0.7, 0.8), 
+        glm::vec3(0.9, 0.5, 0.1), 
+        glm::vec3(1.0, 1.0, 1.0), 
+        glm::vec3(1.0, 0.0, 0.0),
+        glm::vec3(0.0, 0.0, 0.0)
+    };
 };
 
+// Info for displaying on GUI
+struct RVInfo {
+    float volume;
+    float surfaceArea;
+    float curvature;
+    float radius; 
+    std::vector<float> regional_curvs; 
+    double global_area_strain;
+};
+
+// Info that can be outputed to CSV
+struct PrintInfo {
+    float volume;
+    float surface_area;
+    float curvature;
+    float index_curv;
+    float min_curv;
+    float max_curv;
+    std::vector<double> curvatures;
+    std::vector<double> volumes;
+    std::vector<double> surface_areas;
+    std::pair<double, double> minmax;
+};
 
 double find_volume(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& vertices);
 double find_curvature(std::vector<glm::uvec3>& triangles, std::vector<Vertex>& vertices, std::map<int, std::vector<int>>& vertexToTri);

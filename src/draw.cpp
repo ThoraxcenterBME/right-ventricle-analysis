@@ -95,26 +95,12 @@ void draw_regions(std::vector<Vertex>& vertices)
 {
     ColorRegion color; 
     for (Vertex& v : vertices) {
-        switch (v.region) {
-            case Region::IT: 
-                draw_sphere(v.position, 1e-2f, color.c1); 
-                continue; 
-            case Region::OT: 
-                draw_sphere(v.position, 1e-2f, color.c2);
-                continue;
-            case Region::SB:
-                draw_sphere(v.position, 1e-2f, color.c3);
-                continue; 
-            case Region::FB:
-                draw_sphere(v.position, 1e-2f, color.c4);
-                continue;  
-            case Region::SA:
-                draw_sphere(v.position, 1e-2f, color.c5);
-                continue;
-            case Region::FA:
-                draw_sphere(v.position, 1e-2f, color.c6);
-                continue;
-        } 
+        // Don't draw anything for the outflow/inflow outlets.
+        if (int(v.region) == IGN) {
+            continue; 
+        }
+
+        draw_sphere(v.position, 1e-2f, color.colors[v.region]); 
     }
 }
 
