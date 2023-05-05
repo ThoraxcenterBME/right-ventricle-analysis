@@ -422,11 +422,27 @@ void write_strain_to_file(std::string filename, Strain& strain)
     Mesh rv = get_mesh(meshFile); 
     strain.longitudinal_strain = longitudinal_strain(strain.vertices_es, strain.vertices_ed, rv.triangles, rv.vertexToTri, strain.long_axis, strain); 
 
-    datafile << strain.longitudinal_strain << ", "; 
-
-    // Display longitudinal strain for each region 
+    datafile << strain.longitudinal_strain << ", "; // global longitudinal strain
     for (auto& la : strain.l_strain_values) {
         datafile << la << ", "; 
+    }
+
+    datafile << "\n\nGlobal Radial Strain, Inferior Free Wall Radial Strain, Lateral Free Wall Radial Strain, Anterior Free Wall Radial Strain, Septal Body Radial Strain\n"; 
+    glm::vec3 r_axis = find_radial_axis(strain.vertices_ed, strain.long_axis); 
+    strain.radial_strain = radial_strain(strain.vertices_es, strain.vertices_ed, r_axis, strain); 
+
+    datafile << strain.radial_strain << ", "; // global radial strain
+    for (auto& la : strain.r_strain_values) {
+        datafile << la << ", ";
+    }
+
+    datafile << "\n\nGlobal Circumferential Strain, Inferior Free Wall Circumferential Strain, Lateral Free Wall Circumferential Strain, Anterior Free Wall Circumferential Strain, Septal Body Circumferential Strain\n"; 
+    glm::vec3 c_axis = find_circumferential_axis(strain.vertices_ed, strain.long_axis, r_axis);  
+    strain.circumferential_strain = circumferential_strain(strain.vertices_es, strain.vertices_ed, c_axis, strain); 
+
+    datafile << strain.circumferential_strain << ", "; // global circumferential strain
+    for (auto& la : strain.c_strain_values) {
+        datafile << la << ", ";
     }
 
     datafile.close();

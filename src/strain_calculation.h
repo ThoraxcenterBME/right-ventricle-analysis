@@ -32,9 +32,19 @@ struct Strain {
 
 double area_strain(double ed_area, double es_area);
 void set_regional_area_strain(Strain& strain);
+glm::vec3 find_long_axis(std::vector<Vertex>& vertices, int lower_point, int c1, int c2);
+glm::vec3 find_radial_axis(std::vector<Vertex>& vertices, glm::vec3& l_axis);
+glm::vec3 find_circumferential_axis(std::vector<Vertex>& vertices, glm::vec3& l_axis, glm::vec3& r_axis);
 double longitudinal_strain(std::vector<Vertex>& vertices_es,
     std::vector<Vertex>& vertices_ed,
     std::vector<glm::uvec3> triangles,
     std::map<int, std::vector<int>>& vertexToTri,
     glm::vec3& l_axis, Strain& strain);
-glm::vec3 find_long_axis(std::vector<Vertex>& vertices, int lower_point, int c1, int c2);
+double radial_strain(std::vector<Vertex>& vertices_es,
+    std::vector<Vertex>& vertices_ed,
+    glm::vec3& r_axis,
+    Strain& strain); 
+double circumferential_strain(std::vector<Vertex>& vertices_es,
+    std::vector<Vertex>& vertices_ed,
+    glm::vec3& c_axis,
+    Strain& strain);
