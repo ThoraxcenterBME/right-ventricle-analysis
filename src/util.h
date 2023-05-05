@@ -16,26 +16,6 @@ struct ColorRegion {
     };
 };
 
-struct Strain {
-    // Global value
-    double global_es_area; 
-    double global_ed_area;
-    double global_area_strain; 
-
-    // List of areas for regions
-    std::vector<double> ed_areas; 
-    std::vector<double> es_areas; 
-    std::vector<double> strain_values; 
-
-    // Longitudinal/Axial Strain 
-    glm::vec3 long_axis; 
-    glm::vec3 axial_axis; 
-    double longitudinal_strain; 
-    std::vector<Vertex> vertices_ed; 
-    std::vector<Vertex> vertices_es; 
-    std::vector<double> l_strain_values;
-};
-
 // Info for displaying on GUI
 struct RVInfo {
     float volume;
@@ -73,7 +53,3 @@ std::vector<double> regional_volumes(std::vector<Vertex>& vs, std::vector<glm::u
 std::vector<double> regional_surface_areas(std::vector<Vertex>& vs, std::vector<glm::uvec3>& ts, std::map<int, std::vector<int>>& vertexToTri); 
 double find_indexed_curvature(std::vector<Vertex>& vertices);
 std::pair<double, double> find_min_max(std::vector<Vertex>& vertices); 
-double area_strain(double ed_area, double es_area);
-void set_regional_strain(Strain& strain); 
-double longitudinal_strain(std::vector<Vertex>& vertices_es, std::vector<Vertex>& vertices_ed, glm::vec3& l_axis, Strain& strain); 
-glm::vec3 find_long_axis(std::vector<Vertex>& vertices, int lower_point, int c1, int c2);

@@ -33,6 +33,8 @@ struct Vertex {
 	double curvature;
     double indexed_curv;
     double long_strain; 
+	double rad_strain; 
+	double circ_strain; 
     
 	bool exclude = false; // whether it should be excluded in the curvature calculation
     [[nodiscard]] constexpr bool operator==(const Vertex&) const noexcept = default;

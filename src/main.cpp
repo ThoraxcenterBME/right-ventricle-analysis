@@ -2,6 +2,7 @@
 #include "util.h"
 #include "shade.h"
 #include "mesh_loader.h"
+#include "strain_calculation.h"
 // Disable warnings in third-party code.
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
@@ -355,9 +356,49 @@ void write_to_file(std::string filename, PrintInfo info, int i) {
     datafile.close(); 
 }
 
+std::string construct_file_string(int n)
+{
+    // healthy-1: Young healthy volunteer_00 (38)
+    // healthy-2: RV beutel young healthy volunteer BPD 7_00 (65)
+    // healthy-3: RV beutel young healthy volunteer BPD 15_00 (51)
+    // healthy-4: RV beutel young healthy volunteer BPD 16_00 (37)
+    // healthy-5: RV beutel young healthy volunteer BPD 31_00 (78)
+    // tof-1: ToF RV Beutel_00 (41)
+    // tof-2: ToF_2_00 (21)
+    // asd-1: Post_ASD_1_00 (34)
+    if (n / 10 < 1) {
+        return "healthy-1/Young healthy volunteer_00" + std::to_string(n) + ".obj";
+    } else {
+        return "healthy-1/Young healthy volunteer_0" + std::to_string(n) + ".obj";
+    }
+}
+
+/*
+ * Method for postprocessing RV beutel mesh
+ */
+Mesh get_mesh(std::string& filename)
+{
+    // Data files that encode regional RV information
+    std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
+    std::string exclude_vertices = "exclude.txt";
+    std::string regions = "region-v2.txt";
+
+    std::ifstream ifile;
+    ifile.open(std::filesystem::path(DATA_DIR) / filename);
+    Mesh rv = loadMeshRV(ifile);
+    loadRingFromFile(ring, rv.vertices);
+
+    // Extra post-processing for RV regions
+    center_mesh(rv.vertices);
+    mark_excluded(exclude_vertices, rv.vertices);
+    mark_regions(regions, rv.vertices);
+
+    return rv;
+}
+
 void write_strain_to_file(std::string filename, Strain& strain)
 {
-    set_regional_strain(strain); 
+    set_regional_area_strain(strain); 
     std::ofstream datafile;
     datafile.open(std::filesystem::path(DATA_DIR) / filename, std::ios_base::app);
     
@@ -377,7 +418,9 @@ void write_strain_to_file(std::string filename, Strain& strain)
      datafile << "\n\nGlobal Longitudinal Strain, Inferior Free Wall Longitudinal Strain, Lateral Free Wall Longitudinal Strain, Anterior Free Wall Longitudinal Strain, Septal Body Longitudinal Strain\n"; 
 
     // Find global and regional longitudinal strain 
-    strain.longitudinal_strain = longitudinal_strain(strain.vertices_es, strain.vertices_ed, strain.long_axis, strain); 
+    std::string meshFile = construct_file_string(0); 
+    Mesh rv = get_mesh(meshFile); 
+    strain.longitudinal_strain = longitudinal_strain(strain.vertices_es, strain.vertices_ed, rv.triangles, rv.vertexToTri, strain.long_axis, strain); 
 
     datafile << strain.longitudinal_strain << ", "; 
 
@@ -389,22 +432,6 @@ void write_strain_to_file(std::string filename, Strain& strain)
     datafile.close();
 }
 
-std::string construct_file_string(int n) {
-    // healthy-1: Young healthy volunteer_00 (38)
-    // healthy-2: RV beutel young healthy volunteer BPD 7_00 (65)
-    // healthy-3: RV beutel young healthy volunteer BPD 15_00 (51)
-    // healthy-4: RV beutel young healthy volunteer BPD 16_00 (37)
-    // healthy-5: RV beutel young healthy volunteer BPD 31_00 (78)
-    // tof-1: ToF RV Beutel_00 (41)
-    // tof-2: ToF_2_00 (21) 
-    // asd-1: Post_ASD_1_00 (34)
-    if (n / 10 < 1) {
-        return "healthy-2/RV beutel young healthy volunteer BPD 7_00" + std::to_string(n) + ".obj ";
-    } else {
-        return "healthy-2/RV beutel young healthy volunteer BPD 7_0" + std::to_string(n) + ".obj";
-    }
-}
-
 /*
 * This main function for calculations
 */
@@ -412,9 +439,6 @@ int main_calculations(std::string csvfile, int frames)
 {
     // File name strings 
     std::string fileName;
-    std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
-    std::string exclude_vertices = "exclude.txt"; 
-    std::string regions = "region-v2.txt";
     
     // Variables used for calculating strain 
     double min_vol = 10000; // end systole
@@ -428,21 +452,10 @@ int main_calculations(std::string csvfile, int frames)
 
     for (int i = 0; i <= frames; i++) {      
         fileName = construct_file_string(i); 
-        // Load the mesh file and ring file
-        std::ifstream ifile;
-        ifile.open(std::filesystem::path(DATA_DIR) / fileName);
-        Mesh rv = loadMeshRV(ifile);
-        loadRingFromFile(ring, rv.vertices);
+        Mesh rv = get_mesh(fileName); 
 
         // Printing Info for CSV file
         PrintInfo print_info = {}; 
-
-        // Extra processing needed for RV Beutel
-        if (rv.vertices.size() > 937) {
-            center_mesh(rv.vertices);
-            mark_excluded(exclude_vertices, rv.vertices);
-            mark_regions(regions, rv.vertices);
-        }
 
         // Calculate global quantities 
         print_info.volume = find_volume(rv.triangles, rv.vertices) / 1000;
@@ -572,5 +585,5 @@ int main(int argc, char** argv)
 {
     // Either main_calculations or main_visual
     // main_visual(); 
-    main_calculations("data.csv", 65);
+    main_calculations("data.csv", 38);
 }
