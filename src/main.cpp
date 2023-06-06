@@ -155,7 +155,7 @@ static std::optional<glm::vec3> getWorldPositionOfPixel(const Window& window, co
     return glm::unProject(win, view, projection, viewport);
 }
 
-void draw(const ProgramState& state, const Trackball& camera, std::vector<glm::vec3> vertexColors)
+void draw(const ProgramState& state, const Trackball& camera, std::vector<glm::vec3> vertexColors, std::vector<Vertex>& vertices)
 {
     glClearColor(state.backgroundColor.r, state.backgroundColor.g, state.backgroundColor.b, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -177,7 +177,15 @@ void draw(const ProgramState& state, const Trackball& camera, std::vector<glm::v
     glEnable(GL_NORMALIZE);
 
     drawMeshWithColors(state.myMesh, vertexColors);
-    drawAxis();
+  //  drawAxis();
+
+    glm::vec3 l_axis = find_long_axis(vertices, 906, 102, 63); 
+    glm::vec3 r_axis = find_radial_axis(vertices, l_axis); 
+    glm::vec3 c_axis = find_circumferential_axis(vertices, l_axis, r_axis); 
+
+    drawRay(Ray { vertices[906].position, l_axis, glm::length(l_axis) }, glm::vec3(1, 0, 0)); 
+    drawRay(Ray { glm::vec3(0, 0, 0), r_axis, glm::length(l_axis) }, glm::vec3(0, 1, 0)); 
+    drawRay(Ray { glm::vec3(0, 0, 0), c_axis, glm::length(l_axis) }, glm::vec3(0, 0, 1)); 
 
     // Disable depth write because we don't want the points in our depth buffer (messes with user interaction).
     glDepthMask(GL_FALSE); // Disable depth write.
@@ -285,31 +293,20 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info,
     ImGui::Spacing();
     ImGui::Separator();
 
-
     // Display Region 4
     std::string r4_curvature = "Curvature (Septal Body): " + std::to_string(info.regional_curvs[3]);
     ImGui::TextColored(ImVec4(color.colors[3].x, color.colors[3].y, color.colors[3].z, 1.0), r4_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
-
-    /* ImGui::Checkbox("Number Vertices", &number_vertices);
-    if (number_vertices) {
-        // Draw the vertices and their labels
-        for (int i = 0; i < state.myMesh.vertices.size(); i++) {
-            // Calculate the screen space position of the vertex
-            ImVec2 pos = ImGui::GetIO().DisplaySize / 2.0f + ImVec2(state.myMesh.vertices[i].position.x, state.myMesh.vertices[i].position.y) * 100.0f;
-
-            // Draw the vertex label
-            char label[32];
-            sprintf(label, "%d", i);
-            ImGui::GetWindowDrawList()->AddText(ImGui::GetBackgroundDrawList()->_GetFirstCommand()->ClipRect.Min + pos, ImColor(255, 255, 255), label);
-        }
-    }
+    ImGui::Text("Red is longitudinal axis");
     ImGui::Spacing();
-    ImGui::Separator();*/
+    ImGui::Separator();
+    ImGui::Text("Green is radial axis"); 
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Text("Blue is circumferential axis"); 
 
-    // Display other information ...
     ImGui::End();
 }
 
@@ -418,7 +415,7 @@ void write_strain_to_file(std::string filename, Strain& strain)
      datafile << "\n\nGlobal Longitudinal Strain, Inferior Free Wall Longitudinal Strain, Lateral Free Wall Longitudinal Strain, Anterior Free Wall Longitudinal Strain, Septal Body Longitudinal Strain\n"; 
 
     // Find global and regional longitudinal strain 
-    std::string meshFile = construct_file_string(0); 
+    std::string meshFile = construct_file_string(1); 
     Mesh rv = get_mesh(meshFile); 
     strain.longitudinal_strain = longitudinal_strain(strain.vertices_es, strain.vertices_ed, rv.triangles, rv.vertexToTri, strain.long_axis, strain); 
 
@@ -426,10 +423,10 @@ void write_strain_to_file(std::string filename, Strain& strain)
     for (auto& la : strain.l_strain_values) {
         datafile << la << ", "; 
     }
-
+    
     datafile << "\n\nGlobal Radial Strain, Inferior Free Wall Radial Strain, Lateral Free Wall Radial Strain, Anterior Free Wall Radial Strain, Septal Body Radial Strain\n"; 
-    glm::vec3 r_axis = find_radial_axis(strain.vertices_ed, strain.long_axis); 
-    strain.radial_strain = radial_strain(strain.vertices_es, strain.vertices_ed, r_axis, strain); 
+    strain.radial_axis = 1.0f * ((float)rv.rad_radius) * glm::normalize(find_radial_axis(strain.vertices_ed, strain.long_axis)); 
+    strain.radial_strain = radial_strain(strain.vertices_es, strain.vertices_ed, strain); 
 
     datafile << strain.radial_strain << ", "; // global radial strain
     for (auto& la : strain.r_strain_values) {
@@ -437,13 +434,19 @@ void write_strain_to_file(std::string filename, Strain& strain)
     }
 
     datafile << "\n\nGlobal Circumferential Strain, Inferior Free Wall Circumferential Strain, Lateral Free Wall Circumferential Strain, Anterior Free Wall Circumferential Strain, Septal Body Circumferential Strain\n"; 
-    glm::vec3 c_axis = find_circumferential_axis(strain.vertices_ed, strain.long_axis, r_axis);  
-    strain.circumferential_strain = circumferential_strain(strain.vertices_es, strain.vertices_ed, c_axis, strain); 
+    strain.circ_axis = 1.0f * ((float)rv.circ_radius) * glm::normalize(find_circumferential_axis(strain.vertices_ed, strain.long_axis, strain.radial_axis));  
+    strain.circumferential_strain = circumferential_strain(strain.vertices_es, strain.vertices_ed, strain); 
 
     datafile << strain.circumferential_strain << ", "; // global circumferential strain
     for (auto& la : strain.c_strain_values) {
         datafile << la << ", ";
     }
+          
+    std::cout << "radial axis: " << strain.radial_axis.x << " " << strain.radial_axis.y << " " << strain.radial_axis.z << std::endl;
+    std::cout << "circ axis: " << strain.circ_axis.x << " " << strain.circ_axis.y << " " << strain.circ_axis.z << std::endl;
+    std::cout << "dot product c and r: " << glm::dot(strain.circ_axis, strain.radial_axis) << std::endl;
+    std::cout << "dot product r and l: " << glm::dot(strain.radial_axis, strain.long_axis) << std::endl;
+    std::cout << "dot product c and l: " << glm::dot(strain.circ_axis, strain.long_axis) << std::endl; 
 
     datafile.close();
 }
@@ -461,9 +464,11 @@ int main_calculations(std::string csvfile, int frames)
     double max_vol = 0;  // end diastole
     Strain strain = {}; 
 
-    // For defining the long axis.
+    // Apex point 
     int lower_point = 906;
-    int c1 = 102;
+    // Center of inflow tract
+    int c1 = 102; 
+    // Center of outflow tract 
     int c2 = 63;
 
     for (int i = 0; i <= frames; i++) {      
@@ -502,7 +507,7 @@ int main_calculations(std::string csvfile, int frames)
             strain.long_axis = find_long_axis(rv.vertices, lower_point, c1, c2); 
         }
     }
-    
+    std::cout << "here" << std::endl;
     // Output and _sets_ strain calculations 
     write_strain_to_file(csvfile, strain); 
 
@@ -515,7 +520,7 @@ int main_calculations(std::string csvfile, int frames)
 int main_visual()
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(1000), OpenGLVersion::GL2 };
-    std::string fileName = "tof-1/ToF RV Beutel_017.obj";
+    std::string fileName = "healthy-1/Young healthy volunteer_000.obj";
 
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt";
@@ -536,13 +541,15 @@ int main_visual()
     state.myMesh = rv;
     // Extra processing needed for RV Beutel
     if (rv.vertices.size() > 937) {
+        // Vertices used for calculations 
         center_mesh(rv.vertices);
         mark_regions(regions, rv.vertices);
+        mark_excluded(exclude_vertices, rv.vertices);
+        // Vertices used for GUI 
         scale_mesh(state.myMesh.vertices);
         center_mesh(state.myMesh.vertices);
         mark_regions(regions, state.myMesh.vertices);
         mark_excluded(exclude_vertices, state.myMesh.vertices); 
-        mark_excluded(exclude_vertices, rv.vertices);
     }
 
     // Create background and lights for mesh 
@@ -568,7 +575,7 @@ int main_visual()
 
     // Reset to show _indexed_ curvature 
     info.curvature = find_indexed_curvature(rv.vertices); 
-    info.radius = rv.radius;
+    info.radius = rv.circ_radius;
 
     // GUI (Visual Debug) features
     set_regional(info, rv.vertices);
@@ -587,7 +594,7 @@ int main_visual()
         std::vector<glm::vec3> lightColors(state.myMesh.vertices.size());
         computeLighting(state, trackball.position(), lightColors);
 
-        draw(state, trackball, vertexColors);
+        draw(state, trackball, vertexColors, state.myMesh.vertices);
         drawUI(state, trackball, info, normals);
 
         window.swapBuffers();
@@ -600,6 +607,6 @@ int main_visual()
 int main(int argc, char** argv)
 {
     // Either main_calculations or main_visual
-    // main_visual(); 
-    main_calculations("data.csv", 38);
+    //main_visual(); 
+    main_calculations("data-3.csv", 38);
 }

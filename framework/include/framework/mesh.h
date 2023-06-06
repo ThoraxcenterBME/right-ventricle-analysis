@@ -71,7 +71,8 @@ struct Mesh {
 	std::vector<glm::uvec3> triangles;
 	Material material;
     std::map<int, std::vector<int>> vertexToTri;
-    double radius; 
+    double circ_radius;
+    double rad_radius; 
 };
 
 [[nodiscard]] std::vector<Mesh> loadMesh(const std::filesystem::path& file, bool normalize = false);
@@ -79,3 +80,5 @@ struct Mesh {
 void meshFlipX(Mesh& mesh);
 void meshFlipY(Mesh& mesh);
 void meshFlipZ(Mesh& mesh);
+
+

@@ -540,15 +540,22 @@ std::vector<double> find_regional_curvature(std::vector<Vertex>& vertices)
     return r_vals; 
 }
 
-// Center mesh
-void center_mesh(std::vector<Vertex>& vertices) {
+glm::vec3 find_center(std::vector<Vertex>& vertices) {
+    // Map vertices to the defined positions 
     std::vector<glm::vec3> positions;
     std::transform(std::begin(vertices), std::end(vertices),
         std::back_inserter(positions),
         [](const Vertex& v) { return v.position; });
 
-    // Find the center of mass 
-    const glm::vec3 center = std::accumulate(std::begin(positions), std::end(positions), glm::vec3(0.0f)) / static_cast<float>(positions.size());
+    // Find the center of mass
+    return std::accumulate(std::begin(positions), std::end(positions), glm::vec3(0.0f)) / static_cast<float>(positions.size());
+}
+
+// Center mesh
+void center_mesh(std::vector<Vertex>& vertices)
+{
+    // Find the center of mass
+    const glm::vec3 center = find_center(vertices); 
 
     // Center the mesh, so center of mass is at (0, 0, 0)
     std::transform(vertices.begin(), vertices.end(), vertices.begin(),

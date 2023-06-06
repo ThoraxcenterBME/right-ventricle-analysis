@@ -273,7 +273,8 @@ Mesh loadMeshRV(std::istream& in) {
     rv.triangles = triangles; 
     rv.vertices = vertices; 
     rv.vertexToTri = vertexMap; 
-    rv.radius = largestDist(rv.vertices) / 2.0; 
+    rv.circ_radius = glm::distance(vertices[281].position, vertices[695].position); // largestDist(rv.vertices) / 2.0; 
+    rv.rad_radius = glm::distance(vertices[806].position, vertices[596].position); 
 
     // Printing the rings or need them for the first time
     // initializeRings(rv.vertexToTri, rv.vertices, rv.triangles); 

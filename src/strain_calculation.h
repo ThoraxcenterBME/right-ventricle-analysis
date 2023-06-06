@@ -42,9 +42,7 @@ double longitudinal_strain(std::vector<Vertex>& vertices_es,
     glm::vec3& l_axis, Strain& strain);
 double radial_strain(std::vector<Vertex>& vertices_es,
     std::vector<Vertex>& vertices_ed,
-    glm::vec3& r_axis,
     Strain& strain); 
 double circumferential_strain(std::vector<Vertex>& vertices_es,
     std::vector<Vertex>& vertices_ed,
-    glm::vec3& c_axis,
     Strain& strain);
