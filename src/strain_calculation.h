@@ -46,3 +46,4 @@ double radial_strain(std::vector<Vertex>& vertices_es,
 double circumferential_strain(std::vector<Vertex>& vertices_es,
     std::vector<Vertex>& vertices_ed,
     Strain& strain);
+void normalizeVertices(std::vector<Vertex>& vertices);

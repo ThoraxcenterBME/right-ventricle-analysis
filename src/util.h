@@ -2,6 +2,10 @@
 #include <framework/ray.h>
 #include <iostream>
 
+struct TargetCase {
+    std::string filename;
+    int numFrames;
+};
 
 struct ColorRegion {
     // List of colours for coloring each region

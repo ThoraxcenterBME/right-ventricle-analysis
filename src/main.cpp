@@ -71,6 +71,8 @@ struct ProgramState {
     MaterialInformation materialInformation;
 };
 
+TargetCase target; 
+
 glm::vec3 computeLighting(const ProgramState& programState, unsigned vertexIndex, const glm::vec3& cameraPos, const Light& light)
 {
     const auto& vertex = programState.myMesh.vertices[vertexIndex];
@@ -184,8 +186,8 @@ void draw(const ProgramState& state, const Trackball& camera, std::vector<glm::v
     glm::vec3 c_axis = find_circumferential_axis(vertices, l_axis, r_axis); 
 
     drawRay(Ray { vertices[906].position, l_axis, glm::length(l_axis) }, glm::vec3(1, 0, 0)); 
-    drawRay(Ray { glm::vec3(0, 0, 0), r_axis, glm::length(l_axis) }, glm::vec3(0, 1, 0)); 
-    drawRay(Ray { glm::vec3(0, 0, 0), c_axis, glm::length(l_axis) }, glm::vec3(0, 0, 1)); 
+    drawRay(Ray { glm::vec3(0, 0, 0), r_axis, glm::length(r_axis) }, glm::vec3(0, 1, 0)); 
+    drawRay(Ray { glm::vec3(0, 0, 0), c_axis, glm::length(c_axis) }, glm::vec3(0, 0, 1)); 
 
     // Disable depth write because we don't want the points in our depth buffer (messes with user interaction).
     glDepthMask(GL_FALSE); // Disable depth write.
@@ -355,18 +357,10 @@ void write_to_file(std::string filename, PrintInfo info, int i) {
 
 std::string construct_file_string(int n)
 {
-    // healthy-1: Young healthy volunteer_00 (38)
-    // healthy-2: RV beutel young healthy volunteer BPD 7_00 (65)
-    // healthy-3: RV beutel young healthy volunteer BPD 15_00 (51)
-    // healthy-4: RV beutel young healthy volunteer BPD 16_00 (37)
-    // healthy-5: RV beutel young healthy volunteer BPD 31_00 (78)
-    // tof-1: ToF RV Beutel_00 (41)
-    // tof-2: ToF_2_00 (21)
-    // asd-1: Post_ASD_1_00 (34)
     if (n / 10 < 1) {
-        return "healthy-1/Young healthy volunteer_00" + std::to_string(n) + ".obj";
+        return target.filename + std::to_string(0) + std::to_string(n) + ".obj";
     } else {
-        return "healthy-1/Young healthy volunteer_0" + std::to_string(n) + ".obj";
+        return target.filename + std::to_string(n) + ".obj";
     }
 }
 
@@ -376,7 +370,7 @@ std::string construct_file_string(int n)
 Mesh get_mesh(std::string& filename)
 {
     // Data files that encode regional RV information
-    std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
+    std::string ring = "ring-indices.txt"; 
     std::string exclude_vertices = "exclude.txt";
     std::string regions = "region-v2.txt";
 
@@ -391,6 +385,40 @@ Mesh get_mesh(std::string& filename)
     mark_regions(regions, rv.vertices);
 
     return rv;
+}
+
+int test_sphere_strain() 
+{
+    std::string ringFile = "ring-large.txt";
+    std::string sphere1 = "large-sphere.obj";
+    std::string sphere2 = "large-sphere2.obj"; 
+
+     // Load the mesh file and ring file
+    std::ifstream ifile;
+    ifile.open(std::filesystem::path(DATA_DIR) / sphere1);
+    Mesh state1 = loadMeshRV(ifile);
+    loadRingFromFile(ringFile, state1.vertices);
+
+    std::ifstream ifile2;
+    ifile2.open(std::filesystem::path(DATA_DIR) / sphere2);
+    Mesh state2 = loadMeshRV(ifile2);
+    loadRingFromFile(ringFile, state2.vertices);
+
+    // Define some strain 
+    Strain strain = Strain(); 
+    strain.circ_axis = glm::vec3(0, 1, 0); 
+    strain.radial_axis = glm::vec3(0, 0, 1); 
+
+    glm::vec3 long_axis = glm::vec3(1, 0.0, 0.0); 
+    auto long_strain = longitudinal_strain(state1.vertices, state2.vertices, state1.triangles, state1.vertexToTri, long_axis, strain);
+    auto rad_strain = radial_strain(state1.vertices, state2.vertices, strain); 
+    auto circ_strain = circumferential_strain(state1.vertices, state2.vertices, strain); 
+
+    std::cout << "Calculated longitudinal strain: " << long_strain << std::endl; 
+    std::cout << "Calculated radial strain: " << rad_strain << std::endl; 
+    std::cout << "Calculated circumferential strain: " << circ_strain << std::endl; 
+
+    return 0; 
 }
 
 void write_strain_to_file(std::string filename, Strain& strain)
@@ -417,6 +445,7 @@ void write_strain_to_file(std::string filename, Strain& strain)
     // Find global and regional longitudinal strain 
     std::string meshFile = construct_file_string(1); 
     Mesh rv = get_mesh(meshFile); 
+
     strain.longitudinal_strain = longitudinal_strain(strain.vertices_es, strain.vertices_ed, rv.triangles, rv.vertexToTri, strain.long_axis, strain); 
 
     datafile << strain.longitudinal_strain << ", "; // global longitudinal strain
@@ -425,7 +454,7 @@ void write_strain_to_file(std::string filename, Strain& strain)
     }
     
     datafile << "\n\nGlobal Radial Strain, Inferior Free Wall Radial Strain, Lateral Free Wall Radial Strain, Anterior Free Wall Radial Strain, Septal Body Radial Strain\n"; 
-    strain.radial_axis = 1.0f * ((float)rv.rad_radius) * glm::normalize(find_radial_axis(strain.vertices_ed, strain.long_axis)); 
+    strain.radial_axis = ((float)rv.rad_radius) * glm::normalize(find_radial_axis(strain.vertices_ed, strain.long_axis)); // ((float)rv.rad_radius) 
     strain.radial_strain = radial_strain(strain.vertices_es, strain.vertices_ed, strain); 
 
     datafile << strain.radial_strain << ", "; // global radial strain
@@ -434,7 +463,7 @@ void write_strain_to_file(std::string filename, Strain& strain)
     }
 
     datafile << "\n\nGlobal Circumferential Strain, Inferior Free Wall Circumferential Strain, Lateral Free Wall Circumferential Strain, Anterior Free Wall Circumferential Strain, Septal Body Circumferential Strain\n"; 
-    strain.circ_axis = 1.0f * ((float)rv.circ_radius) * glm::normalize(find_circumferential_axis(strain.vertices_ed, strain.long_axis, strain.radial_axis));  
+    strain.circ_axis = ((float)rv.circ_radius) * glm::normalize(find_circumferential_axis(strain.vertices_ed, strain.long_axis, strain.radial_axis)); // ((float)rv.circ_radius) * 
     strain.circumferential_strain = circumferential_strain(strain.vertices_es, strain.vertices_ed, strain); 
 
     datafile << strain.circumferential_strain << ", "; // global circumferential strain
@@ -462,6 +491,9 @@ int main_calculations(std::string csvfile, int frames)
     // Variables used for calculating strain 
     double min_vol = 10000; // end systole
     double max_vol = 0;  // end diastole
+
+    int es = 0; 
+    int ed = 0; 
     Strain strain = {}; 
 
     // Apex point 
@@ -499,15 +531,20 @@ int main_calculations(std::string csvfile, int frames)
             min_vol = print_info.volume; 
             strain.es_areas = std::vector<double>(print_info.surface_areas.begin(), print_info.surface_areas.end()); 
             strain.vertices_es = std::vector<Vertex>(rv.vertices.begin(), rv.vertices.end()); 
+            es = i; 
         } else if (print_info.volume > max_vol) { // end diastole, max. volume
             strain.global_ed_area = print_info.surface_area; 
             max_vol = print_info.volume; 
             strain.ed_areas = std::vector<double>(print_info.surface_areas.begin(), print_info.surface_areas.end()); 
             strain.vertices_ed = std::vector<Vertex>(rv.vertices.begin(), rv.vertices.end());       
             strain.long_axis = find_long_axis(rv.vertices, lower_point, c1, c2); 
+            ed = i; 
         }
     }
-    std::cout << "here" << std::endl;
+
+    std::cout << "ES: " << es << std::endl; 
+    std::cout << "ED: " << ed << std::endl; 
+
     // Output and _sets_ strain calculations 
     write_strain_to_file(csvfile, strain); 
 
@@ -520,7 +557,7 @@ int main_calculations(std::string csvfile, int frames)
 int main_visual()
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(1000), OpenGLVersion::GL2 };
-    std::string fileName = "healthy-1/Young healthy volunteer_000.obj";
+    std::string fileName = target.filename + "00.obj";
 
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt";
@@ -545,6 +582,7 @@ int main_visual()
         center_mesh(rv.vertices);
         mark_regions(regions, rv.vertices);
         mark_excluded(exclude_vertices, rv.vertices);
+
         // Vertices used for GUI 
         scale_mesh(state.myMesh.vertices);
         center_mesh(state.myMesh.vertices);
@@ -603,10 +641,27 @@ int main_visual()
     return 0; 
 }
 
+// healthy-1: Young healthy volunteer_00 (38)
+// healthy-2: RV beutel young healthy volunteer BPD 7_00 (65)
+// healthy-3: RV beutel young healthy volunteer BPD 15_00 (51)
+// healthy-4: RV beutel young healthy volunteer BPD 16_00 (37)
+// healthy-5: RV beutel young healthy volunteer BPD 31_00 (78)
+// tof-1: ToF RV Beutel_00 (41)
+// tof-2: ToF_2_00 (21)
+// asd-1: Post_ASD_1_00 (34)
+
 // Main function 
 int main(int argc, char** argv)
 {
+    target.filename = "healthy-2/RV beutel young healthy volunteer BPD 7_0"; 
+    target.numFrames = 65; 
+
+
     // Either main_calculations or main_visual
-    //main_visual(); 
-    main_calculations("data-3.csv", 38);
+    // main_visual(); 
+
+    main_calculations("data-3.csv", target.numFrames);
+
+    // Simple test for checking whether strain works 
+    // test_sphere_strain(); 
 }
