@@ -10,18 +10,14 @@ else()
 endif()
 find_package(OpenGL REQUIRED)
 
-add_executable(ShadingAssignment
+add_executable(BeutelAnalysis
 	"src/main.cpp"
 	"src/draw.cpp" "src/mesh_loader.h" "src/mesh_loader.cpp" "src/util.h" "src/util.cpp" 
 	"src/strain_calculation.h" "src/strain_calculation.cpp")
-target_compile_features(ShadingAssignment PRIVATE cxx_std_20)
-target_link_libraries(ShadingAssignment PRIVATE CGFramework OpenGL::GLU)
-enable_sanitizers(ShadingAssignment)
-set_project_warnings(ShadingAssignment)
+target_compile_features(BeutelAnalysis PRIVATE cxx_std_20)
+target_link_libraries(BeutelAnalysis PRIVATE CGFramework OpenGL::GLU)
+enable_sanitizers(BeutelAnalysis)
+set_project_warnings(BeutelAnalysis)
 
-target_compile_definitions(ShadingAssignment PRIVATE "-DDATA_DIR=\"${CMAKE_CURRENT_LIST_DIR}/data/\"")
-
-if (EXISTS "${CMAKE_CURRENT_LIST_DIR}/grading_tests/")
-	add_subdirectory("grading_tests")
-endif()
+target_compile_definitions(BeutelAnalysis PRIVATE "-DDATA_DIR=\"${CMAKE_CURRENT_LIST_DIR}/data/\"")
 
