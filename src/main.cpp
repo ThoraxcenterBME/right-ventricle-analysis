@@ -73,6 +73,7 @@ struct ProgramState {
 
 TargetCase target; 
 
+
 glm::vec3 computeLighting(const ProgramState& programState, unsigned vertexIndex, const glm::vec3& cameraPos, const Light& light)
 {
     const auto& vertex = programState.myMesh.vertices[vertexIndex];
@@ -179,7 +180,6 @@ void draw(const ProgramState& state, const Trackball& camera, std::vector<glm::v
     glEnable(GL_NORMALIZE);
 
     drawMeshWithColors(state.myMesh, vertexColors);
-  //  drawAxis();
 
     glm::vec3 l_axis = find_long_axis(vertices, 906, 102, 63); 
     glm::vec3 r_axis = find_radial_axis(vertices, l_axis); 
@@ -301,14 +301,6 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info,
     ImGui::Spacing();
     ImGui::Separator();
 
-    ImGui::Text("Red is longitudinal axis");
-    ImGui::Spacing();
-    ImGui::Separator();
-    ImGui::Text("Green is radial axis"); 
-    ImGui::Spacing();
-    ImGui::Separator();
-    ImGui::Text("Blue is circumferential axis"); 
-
     ImGui::End();
 }
 
@@ -330,6 +322,13 @@ void set_regional(RVInfo& info, std::vector<Vertex>& vertices) {
 void write_to_file(std::string filename, PrintInfo info, int i) {
     std::ofstream datafile; 
     datafile.open(std::filesystem::path(DATA_DIR) / filename, std::ios_base::app); 
+
+    // First frame, write header
+    if (i == 0) {
+        datafile << "Beutel,Total Volume,Total Surface Area,Total Curvature,Volume Inferior Free Wall,Volume Lateral Free Wall,"
+                 << "Volume Anterior Free Wall, Volume Septal Body, Surface Area Inferior Free Wall, Surface Area Lateral Free Wall, Surface Area Anterior Free Wall, Surface Area Septal Body, Curvature Inferior Free Wall, Curvature Lateral Free Wall, Curvature Anterior Free Wall, Curvature Septal Body, Minimum Curvature, Maximum Curvature\n"; 
+    }
+
     datafile << i << ", "; 
     datafile << info.volume << ", ";
     datafile << info.surface_area << ", "; 
@@ -387,45 +386,15 @@ Mesh get_mesh(std::string& filename)
     return rv;
 }
 
-int test_sphere_strain() 
-{
-    std::string ringFile = "ring-large.txt";
-    std::string sphere1 = "large-sphere.obj";
-    std::string sphere2 = "large-sphere2.obj"; 
-
-     // Load the mesh file and ring file
-    std::ifstream ifile;
-    ifile.open(std::filesystem::path(DATA_DIR) / sphere1);
-    Mesh state1 = loadMeshRV(ifile);
-    loadRingFromFile(ringFile, state1.vertices);
-
-    std::ifstream ifile2;
-    ifile2.open(std::filesystem::path(DATA_DIR) / sphere2);
-    Mesh state2 = loadMeshRV(ifile2);
-    loadRingFromFile(ringFile, state2.vertices);
-
-    // Define some strain 
-    Strain strain = Strain(); 
-    strain.circ_axis = glm::vec3(0, 1, 0); 
-    strain.radial_axis = glm::vec3(0, 0, 1); 
-
-    glm::vec3 long_axis = glm::vec3(1, 0.0, 0.0); 
-    auto long_strain = longitudinal_strain(state1.vertices, state2.vertices, state1.triangles, state1.vertexToTri, long_axis, strain);
-    auto rad_strain = radial_strain(state1.vertices, state2.vertices, strain); 
-    auto circ_strain = circumferential_strain(state1.vertices, state2.vertices, strain); 
-
-    std::cout << "Calculated longitudinal strain: " << long_strain << std::endl; 
-    std::cout << "Calculated radial strain: " << rad_strain << std::endl; 
-    std::cout << "Calculated circumferential strain: " << circ_strain << std::endl; 
-
-    return 0; 
-}
-
 void write_strain_to_file(std::string filename, Strain& strain)
 {
     set_regional_area_strain(strain); 
     std::ofstream datafile;
     datafile.open(std::filesystem::path(DATA_DIR) / filename, std::ios_base::app);
+
+    if (!datafile.is_open()) {
+        datafile = std::ofstream(filename); 
+    }
     
     // Write the header 
     datafile << "\nGlobal Area Strain, Inferior Free Wall Area Strain, Lateral Free Wall Area Strain, "
@@ -453,9 +422,9 @@ void write_strain_to_file(std::string filename, Strain& strain)
         datafile << la << ", "; 
     }
     
-    datafile << "\n\nGlobal Radial Strain, Inferior Free Wall Radial Strain, Lateral Free Wall Radial Strain, Anterior Free Wall Radial Strain, Septal Body Radial Strain\n"; 
+    /* datafile << "\n\nGlobal Radial Strain, Inferior Free Wall Radial Strain, Lateral Free Wall Radial Strain, Anterior Free Wall Radial Strain, Septal Body Radial Strain\n"; 
     strain.radial_axis = ((float)rv.rad_radius) * glm::normalize(find_radial_axis(strain.vertices_ed, strain.long_axis)); // ((float)rv.rad_radius) 
-    strain.radial_strain = radial_strain(strain.vertices_es, strain.vertices_ed, strain); 
+    // strain.radial_strain = radial_strain(strain.vertices_es, strain.vertices_ed, strain); 
 
     datafile << strain.radial_strain << ", "; // global radial strain
     for (auto& la : strain.r_strain_values) {
@@ -463,7 +432,7 @@ void write_strain_to_file(std::string filename, Strain& strain)
     }
 
     datafile << "\n\nGlobal Circumferential Strain, Inferior Free Wall Circumferential Strain, Lateral Free Wall Circumferential Strain, Anterior Free Wall Circumferential Strain, Septal Body Circumferential Strain\n"; 
-    strain.circ_axis = ((float)rv.circ_radius) * glm::normalize(find_circumferential_axis(strain.vertices_ed, strain.long_axis, strain.radial_axis)); // ((float)rv.circ_radius) * 
+    strain.circ_axis = -1.0f * ((float)rv.circ_radius) * glm::normalize(find_circumferential_axis(strain.vertices_ed, strain.long_axis, strain.radial_axis)); // ((float)rv.circ_radius) * 
     strain.circumferential_strain = circumferential_strain(strain.vertices_es, strain.vertices_ed, strain); 
 
     datafile << strain.circumferential_strain << ", "; // global circumferential strain
@@ -476,14 +445,15 @@ void write_strain_to_file(std::string filename, Strain& strain)
     std::cout << "dot product c and r: " << glm::dot(strain.circ_axis, strain.radial_axis) << std::endl;
     std::cout << "dot product r and l: " << glm::dot(strain.radial_axis, strain.long_axis) << std::endl;
     std::cout << "dot product c and l: " << glm::dot(strain.circ_axis, strain.long_axis) << std::endl; 
-
+    */
+    
     datafile.close();
 }
 
 /*
 * This main function for calculations
 */
-int main_calculations(std::string csvfile, int frames)
+int main_calculations(std::string datafile, std::string strainfile, int frames)
 {
     // File name strings 
     std::string fileName;
@@ -523,7 +493,7 @@ int main_calculations(std::string csvfile, int frames)
 
         // Write to CSV file
         print_info.minmax = find_min_max(rv.vertices); 
-        write_to_file(csvfile, print_info, i);
+        write_to_file(datafile, print_info, i);
 
         // Recording variables for calculating strain
         if (print_info.volume < min_vol) { // end-systole, min. volume
@@ -542,11 +512,8 @@ int main_calculations(std::string csvfile, int frames)
         }
     }
 
-    std::cout << "ES: " << es << std::endl; 
-    std::cout << "ED: " << ed << std::endl; 
-
     // Output and _sets_ strain calculations 
-    write_strain_to_file(csvfile, strain); 
+    write_strain_to_file(strainfile, strain); 
 
     return 0; 
 }
@@ -641,27 +608,49 @@ int main_visual()
     return 0; 
 }
 
-// healthy-1: Young healthy volunteer_00 (38)
-// healthy-2: RV beutel young healthy volunteer BPD 7_00 (65)
-// healthy-3: RV beutel young healthy volunteer BPD 15_00 (51)
-// healthy-4: RV beutel young healthy volunteer BPD 16_00 (37)
-// healthy-5: RV beutel young healthy volunteer BPD 31_00 (78)
-// tof-1: ToF RV Beutel_00 (41)
+// healthy-1: Young healthy volunteer_0 (38)
+// healthy-2: RV beutel young healthy volunteer BPD 7_0 (65)
+// healthy-3: RV beutel young healthy volunteer BPD 15_0 (51)
+// healthy-4: RV beutel young healthy volunteer BPD 16_0 (37)
+// healthy-5: RV beutel young healthy volunteer BPD 31_0 (78)
+// tof-1: ToF RV Beutel_0 (41)
 // tof-2: ToF_2_00 (21)
 // asd-1: Post_ASD_1_00 (34)
 
 // Main function 
 int main(int argc, char** argv)
 {
-    target.filename = "healthy-2/RV beutel young healthy volunteer BPD 7_0"; 
-    target.numFrames = 65; 
+    //std::string folderName = "ToF "; 
+    //std::string resultsFile = "tof-analysis/data-"; 
+    //std::string strainFile = "strain-tof/data-"; 
 
+    //std::vector<int> frameCounts = {
+    //    // 12
+    //    22, 23, 35, 22, 17, 33, 17, 22, 17, 28, 
+    //    // 22
+    //    16, 20, 17, 21, 14, 26, 26, 20, 29, 14,
+    //    // 32 
+    //    19, 20, 23, 21, 22, 40, 25, 22, 16, 32,
+    //    // 42
+    //    14, 25, 21, 35, 17, 20, 24, 39, 17
+
+    //}; 
+
+    //for (int i = 12; i <= 50; i++) {
+    //    target.filename = folderName + std::to_string(i) + "/" + folderName + std::to_string(i) + "_0"; 
+    //    target.numFrames = frameCounts[i - 12]; 
+
+    //    auto res = resultsFile + std::to_string(i) + ".csv"; 
+    //    auto strain = strainFile + std::to_string(i) + ".csv"; 
+
+    //    main_calculations(res, strain, target.numFrames);
+    //}
+
+    target.filename = "tof-2/ToF_2_0";
+    target.numFrames = 21; 
+    
+    main_calculations("tof-analysis/data-2.csv", "strain-tof/data-2.csv", target.numFrames);
 
     // Either main_calculations or main_visual
     // main_visual(); 
-
-    main_calculations("data-3.csv", target.numFrames);
-
-    // Simple test for checking whether strain works 
-    // test_sphere_strain(); 
 }

@@ -36,7 +36,6 @@ double area_strain(double ed_area, double es_area)
 
 void set_regional_area_strain(Strain& strain)
 {
-
     for (int i = 0; i < strain.es_areas.size(); i++) {
         strain.strain_values.push_back(area_strain(strain.ed_areas[i], strain.es_areas[i]));
     }
@@ -68,15 +67,20 @@ double directional_strain_vertex(int vertex,
         auto proj_ed_vector = glm::length((glm::dot(ed_vector, axis) / length_axis) * axis);
         auto proj_es_vector = glm::length((glm::dot(es_vector, axis) / length_axis) * axis);
 
-        // Strain percentage change
+        if (vertices_ed[current_vertex.ring[i]].region == IGN) {
+            continue; 
+        }
+
         auto strain = 100 * ((proj_es_vector - proj_ed_vector) / proj_ed_vector);
 
         // Subtract two vectors
         u_vectors.push_back(strain);
     }
 
-    // Sum it up
-    return std::accumulate(u_vectors.begin(), u_vectors.end(), 0.0) / static_cast<double>(current_vertex.ring.size());
+    // Take average 
+    auto res = std::accumulate(u_vectors.begin(), u_vectors.end(), 0.0) / static_cast<double>(current_vertex.ring.size());
+
+    return res;
 }
 
 std::vector<double> get_regional_strain(Strain& strain, std::vector<Vertex>& vertices, double(*get_strain)(Vertex &v))
@@ -151,11 +155,10 @@ double circumferential_strain(std::vector<Vertex>& vertices_es,
     auto circumferential_strain = 0.0;
 
     for (int i = 0; i < vertices_ed.size(); i++) {
-        float strain_i = directional_strain_vertex(i, vertices_es, vertices_ed, strain.circ_axis);
-
-        if (vertices_ed[i].region == SP) {
-            // std::cout << "SP " << i << " : " << strain_i << std::endl; 
+        if (vertices_ed[i].region == IGN) {
+            continue; 
         }
+        float strain_i = directional_strain_vertex(i, vertices_es, vertices_ed, strain.circ_axis);
 
         vertices_ed[i].circ_strain = strain_i;
         circumferential_strain += strain_i;
