@@ -95,6 +95,7 @@ void draw_regions(std::vector<Vertex>& vertices)
 {
     ColorRegion color; 
     for (Vertex& v : vertices) {
+
         // Don't draw anything for the outflow/inflow outlets.
         if (int(v.region) == IGN) {
             continue; 

@@ -99,7 +99,7 @@ double find_surface_area_regional(std::vector<glm::uvec3>& triangles,
 
     return 0.5 * sa;
 }
-// TODO Change
+
 std::vector<double> regional_surface_areas(std::vector<Vertex>& vs,
     std::vector<glm::uvec3>& ts,
     std::map<int, std::vector<int>>& vertexToTri)
@@ -119,7 +119,6 @@ std::vector<double> regional_surface_areas(std::vector<Vertex>& vs,
     return { sa_reg_ifw, sa_reg_lfw, sa_reg_afw, sa_reg_sp };
 }
 
-// TODO Change 
 std::vector<double> regional_volumes(std::vector<Vertex>& vs,
     std::vector<glm::uvec3>& ts,
     std::map<int, std::vector<int>>& vertexToTri)
