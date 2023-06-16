@@ -1,0 +1,41 @@
+#Timing Information
+Average RR Duration		1106.72		ms
+Enddiastole time   		0		ms
+Endsystole time    		368.755		ms
+
+
+#Timestamps
+0		ms
+33.524		ms
+79.323		ms
+112.846		ms
+146.369		ms
+179.892		ms
+213.416		ms
+246.939		ms
+280.462		ms
+313.985		ms
+347.508		ms
+381.032		ms
+414.555		ms
+448.078		ms
+481.601		ms
+515.124		ms
+548.648		ms
+582.171		ms
+615.694		ms
+649.217		ms
+682.74		ms
+716.264		ms
+749.787		ms
+783.31		ms
+816.833		ms
+850.356		ms
+883.88		ms
+917.403		ms
+950.926		ms
+984.449		ms
+1017.97		ms
+1051.5		ms
+1085.02		ms
+1118.54		ms
