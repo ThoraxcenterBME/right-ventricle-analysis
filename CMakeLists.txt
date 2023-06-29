@@ -13,7 +13,7 @@ find_package(OpenGL REQUIRED)
 add_executable(BeutelAnalysis
 	"src/main.cpp"
 	"src/draw.cpp" "src/mesh_loader.h" "src/mesh_loader.cpp" "src/util.h" "src/util.cpp" 
-	"src/strain_calculation.h" "src/strain_calculation.cpp" "src/test.cpp")
+	"src/strain_calculation.h" "src/strain_calculation.cpp")
 target_compile_features(BeutelAnalysis PRIVATE cxx_std_20)
 target_link_libraries(BeutelAnalysis PRIVATE CGFramework OpenGL::GLU)
 enable_sanitizers(BeutelAnalysis)

@@ -326,7 +326,8 @@ void write_to_file(std::string filename, PrintInfo info, int i) {
     // First frame, write header
     if (i == 0) {
         datafile << "Beutel,Total Volume,Total Surface Area,Total Curvature,Volume Inferior Free Wall,Volume Lateral Free Wall,"
-                 << "Volume Anterior Free Wall, Volume Septal Body, Surface Area Inferior Free Wall, Surface Area Lateral Free Wall, Surface Area Anterior Free Wall, Surface Area Septal Body, Curvature Inferior Free Wall, Curvature Lateral Free Wall, Curvature Anterior Free Wall, Curvature Septal Body, Minimum Curvature, Maximum Curvature\n"; 
+                 << "Volume Anterior Free Wall,Volume Septal Body,Surface Area Inferior Free Wall,Surface Area Lateral Free Wall,"
+                 << "Surface Area Anterior Free Wall,Surface Area Septal Body,Curvature Inferior Free Wall,Curvature Lateral Free Wall,Curvature Anterior Free Wall,Curvature Septal Body,Minimum Curvature,Maximum Curvature\n "; 
     }
 
     datafile << i << ", "; 
@@ -646,10 +647,10 @@ int main(int argc, char** argv)
     //    main_calculations(res, strain, target.numFrames);
     //}
 
-    target.filename = "tof-2/ToF_2_0";
-    target.numFrames = 21; 
-    
-    main_calculations("tof-analysis/data-2.csv", "strain-tof/data-2.csv", target.numFrames);
+    //target.filename = "tof-2/ToF_2_0";
+    //target.numFrames = 21; 
+    //
+    //main_calculations("tof-analysis/data-2.csv", "strain-tof/data-2.csv", target.numFrames);
 
     // Either main_calculations or main_visual
     // main_visual(); 
