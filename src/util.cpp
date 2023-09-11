@@ -366,7 +366,7 @@ void set_indexed_curvature(std::vector<glm::uvec3>& triangles,
     std::vector<Vertex>& vertices,
     std::map<int, std::vector<int>>& vertexToTri)
 {
-    // Calculate the regional volumes 
+    // Calculate the  volumes 
     auto v_total = find_volume(triangles, vertices); 
     auto k_reg = std::cbrt(4 * M_PI / (3 * v_total)); 
 

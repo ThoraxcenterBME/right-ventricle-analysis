@@ -525,7 +525,7 @@ int main_calculations(std::string datafile, std::string strainfile, int frames)
 int main_visual()
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(1000), OpenGLVersion::GL2 };
-    std::string fileName = target.filename + "00.obj";
+    std::string fileName = target.filename + "19.obj";
 
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt";
@@ -621,53 +621,53 @@ int main_visual()
 // Main function 
 int main(int argc, char** argv)
 {
-    std::string folderName = "Healthy control "; 
-    std::string resultsFile = "healthy-analysis/data-"; 
-    std::string strainFile = "healthy-tof/data-"; 
+    //std::string folderName = "Healthy control "; 
+    //std::string resultsFile = "healthy-analysis/data-"; 
+    //std::string strainFile = "strain-healthy/data-"; 
 
-    // Healthy
-    std::vector<int> frameCounts = {
-        // 1 
-        38, 65, 51, 37, 78,
-        // 6 
-        61, 25, 19, 26, 23, 25, 33, 25, 36, 32, 33, 36, 34,
-        // 19
-        28, 19, 21, 28, 39, 44, 18, 24, 33, 43, 33, 18,
-        // 31
-        44, 19, 17, 21, 50, 20, 30, 18, 38, 17, 27, 24,
-        // 43
-        31, 15, 30, 35, 47, 21, 19, 36
-    }; 
+    //// Healthy
+    //std::vector<int> frameCounts = {
+    //    // 1 
+    //    38, 65, 51, 37, 78,
+    //    // 6 
+    //    61, 25, 19, 26, 23, 25, 33, 25, 36, 32, 33, 36, 34,
+    //    // 19
+    //    28, 19, 21, 28, 39, 44, 18, 24, 33, 43, 33, 18,
+    //    // 31
+    //    44, 19, 17, 21, 50, 20, 30, 18, 38, 17, 27, 24,
+    //    // 43
+    //    31, 15, 30, 35, 47, 21, 19, 36
+    //}; 
 
-     //// ToF
-     //std::vector<int> frameCounts = {
-     //    // 1
-     //    41, 18, 19, 23, 25, 17, 19, 31, 30, 38, 19,
-     //    // 12
-     //    22, 23, 35, 22, 17, 33, 17, 22, 17, 28, 
-     //    // 22
-     //    16, 20, 17, 21, 14, 26, 26, 20, 29, 14,
-     //    // 32 
-     //    19, 20, 23, 21, 22, 40, 25, 22, 16, 32,
-     //    // 42
-     //    14, 25, 21, 35, 17, 20, 24, 39, 17
-     //}; 
+    // //// ToF
+    // //std::vector<int> frameCounts = {
+    // //    // 1
+    // //    41, 18, 19, 23, 25, 17, 19, 31, 30, 38, 19,
+    // //    // 12
+    // //    22, 23, 35, 22, 17, 33, 17, 22, 17, 28, 
+    // //    // 22
+    // //    16, 20, 17, 21, 14, 26, 26, 20, 29, 14,
+    // //    // 32 
+    // //    19, 20, 23, 21, 22, 40, 25, 22, 16, 32,
+    // //    // 42
+    // //    14, 25, 21, 35, 17, 20, 24, 39, 17
+    // //}; 
 
-    for (int i = 1; i <= 50; i++) {
-        target.filename = folderName + std::to_string(i) + "/" + folderName + std::to_string(i) + "_0"; 
-        target.numFrames = frameCounts[i - 1]; 
+    //for (int i = 1; i <= 50; i++) {
+    //    target.filename = folderName + std::to_string(i) + "/" + folderName + std::to_string(i) + "_0"; 
+    //    target.numFrames = frameCounts[i - 1]; 
 
-        auto res = resultsFile + std::to_string(i) + ".csv"; 
-        auto strain = strainFile + std::to_string(i) + ".csv"; 
+    //    auto res = resultsFile + std::to_string(i) + ".csv"; 
+    //    auto strain = strainFile + std::to_string(i) + ".csv"; 
 
-        main_calculations(res, strain, target.numFrames);
-    }
+    //    main_calculations(res, strain, target.numFrames);
+    //}
 
-    // target.filename = "tof-2/ToF_2_0";
-    // target.numFrames = 21; 
+     target.filename = "Healthy control 1/Healthy control 1_0";
+     target.numFrames = 19; 
     //
     //main_calculations("tof-analysis/data-2.csv", "strain-tof/data-2.csv", target.numFrames);
 
     // Either main_calculations or main_visual
-    // main_visual(); 
+    main_visual(); 
 }
