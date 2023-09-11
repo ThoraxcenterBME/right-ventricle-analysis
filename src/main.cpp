@@ -276,28 +276,39 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info,
     ImGui::Spacing();
     ImGui::Separator();
 
-
     // Display Region 1 
-    std::string r1_curvature = "Curvature (Inferior Free Wall): " + std::to_string(info.regional_curvs[0]);
+    std::string r1_curvature = "Curvature (Inflow Tract): " + std::to_string(info.regional_curvs[0]);
     ImGui::TextColored(ImVec4(color.colors[0].x, color.colors[0].y, color.colors[2].z, 1.0), r1_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
     // Display Region 2
-    std::string r2_curvature = "Curvature (Lateral Free Wall): " + std::to_string(info.regional_curvs[1]);
+    std::string r2_curvature = "Curvature (Outflow Tract): " + std::to_string(info.regional_curvs[1]);
     ImGui::TextColored(ImVec4(color.colors[1].x, color.colors[1].y, color.colors[1].z, 1.0), r2_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
     // Display Region 3
-    std::string r3_curvature = "Curvature (Anterior Free Wall): " + std::to_string(info.regional_curvs[2]);
+    std::string r3_curvature = "Curvature (Free Wall Apex): " + std::to_string(info.regional_curvs[2]);
     ImGui::TextColored(ImVec4(color.colors[2].x, color.colors[2].y, color.colors[2].z, 1.0), r3_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
     // Display Region 4
-    std::string r4_curvature = "Curvature (Septal Body): " + std::to_string(info.regional_curvs[3]);
+    std::string r4_curvature = "Curvature (Septal Apex): " + std::to_string(info.regional_curvs[3]);
     ImGui::TextColored(ImVec4(color.colors[3].x, color.colors[3].y, color.colors[3].z, 1.0), r4_curvature.c_str());
+    ImGui::Spacing();
+    ImGui::Separator();
+
+    // Display Region 5
+    std::string r5_curvature = "Curvature (Septal Body): " + std::to_string(info.regional_curvs[4]);
+    ImGui::TextColored(ImVec4(color.colors[4].x, color.colors[4].y, color.colors[4].z, 1.0), r5_curvature.c_str());
+    ImGui::Spacing();
+    ImGui::Separator();
+
+    // Display Region 6
+    std::string r6_curvature = "Curvature (Free Wall Body): " + std::to_string(info.regional_curvs[5]);
+    ImGui::TextColored(ImVec4(color.colors[5].x, color.colors[5].y, color.colors[5].z, 1.0), r6_curvature.c_str());
     ImGui::Spacing();
     ImGui::Separator();
 
@@ -310,7 +321,6 @@ void printHelp()
     std::cout << "SPACE - replaces mouse click for selection, will then call your light placement function" << std::endl;
 }
 
-// Change 
 void set_regional(RVInfo& info, std::vector<Vertex>& vertices) {
     std::vector<double> curvatures = find_regional_curvature(vertices); 
 
@@ -325,9 +335,12 @@ void write_to_file(std::string filename, PrintInfo info, int i) {
 
     // First frame, write header
     if (i == 0) {
-        datafile << "Beutel,Total Volume,Total Surface Area,Total Curvature,Volume Inferior Free Wall,Volume Lateral Free Wall,"
-                 << "Volume Anterior Free Wall,Volume Septal Body,Surface Area Inferior Free Wall,Surface Area Lateral Free Wall,"
-                 << "Surface Area Anterior Free Wall,Surface Area Septal Body,Curvature Inferior Free Wall,Curvature Lateral Free Wall,Curvature Anterior Free Wall,Curvature Septal Body,Minimum Curvature,Maximum Curvature\n "; 
+        datafile << "Beutel,Total Volume,Total Surface Area,Total Curvature,Volume Inflow Tract,Volume Outflow Tract,"
+                 << "Volume Free Wall Apex,Volume Septal Apex,Volume Septal Body,Volume Free Wall Body,"
+                 << "Surface Area Inflow Tract,Surface Area Outflow Tract,"
+                 << "Surface Area Free Wall Apex,Surface Area Septal Apex,Surface Area Septal Body, Surface Area Free Wall Body,"
+                 << "Curvature Inflow Tract,Curvature Outflow Tract,Curvature Free Wall Apex, Curvature Septal Apex," 
+                 << "Curvature Septal Bodt,Curvature Free Wall Body, Minimum Curvature, Maximum Curvature\n "; 
     }
 
     datafile << i << ", "; 
@@ -372,7 +385,7 @@ Mesh get_mesh(std::string& filename)
     // Data files that encode regional RV information
     std::string ring = "ring-indices.txt"; 
     std::string exclude_vertices = "exclude.txt";
-    std::string regions = "region-v2.txt";
+    std::string regions = "region-v1.txt";
 
     std::ifstream ifile;
     ifile.open(std::filesystem::path(DATA_DIR) / filename);
@@ -398,8 +411,9 @@ void write_strain_to_file(std::string filename, Strain& strain)
     }
     
     // Write the header 
-    datafile << "\nGlobal Area Strain, Inferior Free Wall Area Strain, Lateral Free Wall Area Strain, "
-             << "Anterior Free Wall Area Strain, Septal Body Area Strain \n"; 
+    datafile << "\nGlobal Area Strain, Inflow Tract Area Strain, Outflow Tract Area Strain, "
+             << "Free Wall Apex Area Strain, Septal Apex Area Strain, "
+             << "Septal Body Area Strain, Free Wall Body Area Strain \n"; 
    
     // Find global area strain 
     strain.global_area_strain = area_strain(strain.global_ed_area, strain.global_es_area); 
@@ -410,7 +424,9 @@ void write_strain_to_file(std::string filename, Strain& strain)
         datafile << a << ", ";
     }
 
-     datafile << "\n\nGlobal Longitudinal Strain, Inferior Free Wall Longitudinal Strain, Lateral Free Wall Longitudinal Strain, Anterior Free Wall Longitudinal Strain, Septal Body Longitudinal Strain\n"; 
+    datafile << "\nGlobal Longitudinal Strain, Inflow Tract Longitudinal Strain, Outflow Tract Longitudinal Strain, "
+             << "Free Wall Apex Longitudinal Strain, Septal Apex Longitudinal Strain, "
+             << "Septal Body Longitudinal Strain, Free Wall Body Longitudinal Strain \n"; 
 
     // Find global and regional longitudinal strain 
     std::string meshFile = construct_file_string(1); 
@@ -529,7 +545,7 @@ int main_visual()
 
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt";
-    std::string regions = "region-v2.txt";
+    std::string regions = "region-v1.txt";
 
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
     trackball.disableTranslation();

@@ -105,18 +105,23 @@ std::vector<double> regional_surface_areas(std::vector<Vertex>& vs,
     std::map<int, std::vector<int>>& vertexToTri)
 {
     // Find the triangles which belong to a certain region
-    auto ifw_region = find_all_in_region(vs, ts, Region::IFW);
-    auto lfw_region = find_all_in_region(vs, ts, Region::LFW);
-    auto afw_region = find_all_in_region(vs, ts, Region::AFW);
-    auto sp_region = find_all_in_region(vs, ts, Region::SP);
+    auto it_region = find_all_in_region(vs, ts, Region::IT);
+    auto ot_region = find_all_in_region(vs, ts, Region::OT);
+    auto fa_region = find_all_in_region(vs, ts, Region::FA);
+    auto sa_region = find_all_in_region(vs, ts, Region::SA);
+    auto sb_region = find_all_in_region(vs, ts, Region::SB);
+    auto fb_region = find_all_in_region(vs, ts, Region::FB);
+
 
     // Find regional surface area
-    double sa_reg_ifw = find_surface_area_regional(ts, vs, ifw_region);
-    double sa_reg_lfw = find_surface_area_regional(ts, vs, lfw_region);
-    double sa_reg_afw = find_surface_area_regional(ts, vs, afw_region);
-    double sa_reg_sp = find_surface_area_regional(ts, vs, sp_region);
+    double sa_reg_it = find_surface_area_regional(ts, vs, it_region);
+    double sa_reg_ot = find_surface_area_regional(ts, vs, ot_region);
+    double sa_reg_fa = find_surface_area_regional(ts, vs, fa_region);
+    double sa_reg_sa = find_surface_area_regional(ts, vs, sa_region);
+    double sa_reg_sb = find_surface_area_regional(ts, vs, sb_region);
+    double sa_reg_fb = find_surface_area_regional(ts, vs, fb_region);
    
-    return { sa_reg_ifw, sa_reg_lfw, sa_reg_afw, sa_reg_sp };
+    return { sa_reg_it, sa_reg_ot, sa_reg_fa, sa_reg_sa, sa_reg_sb, sa_reg_fb };
 }
 
 std::vector<double> regional_volumes(std::vector<Vertex>& vs,
@@ -130,12 +135,14 @@ std::vector<double> regional_volumes(std::vector<Vertex>& vs,
     double ratio_scale = find_volume(ts, vs) / find_surface_area(ts, vs);
 
     // Determine regional volumes 
-    double v_reg_ifw = ratio_scale * regional_sa[int(Region::IFW)];
-    double v_reg_lfw = ratio_scale * regional_sa[int(Region::LFW)];
-    double v_reg_afw = ratio_scale * regional_sa[int(Region::AFW)];
-    double v_reg_sp = ratio_scale * regional_sa[int(Region::SP)];
+    double v_reg_it = ratio_scale * regional_sa[int(Region::IT)];
+    double v_reg_ot = ratio_scale * regional_sa[int(Region::OT)];
+    double v_reg_fa = ratio_scale * regional_sa[int(Region::FA)];
+    double v_reg_sa = ratio_scale * regional_sa[int(Region::SA)];
+    double v_reg_sb = ratio_scale * regional_sa[int(Region::SB)];
+    double v_reg_fb = ratio_scale * regional_sa[int(Region::FB)];
 
-    return { v_reg_ifw, v_reg_lfw, v_reg_afw, v_reg_sp };
+    return { v_reg_it, v_reg_ot, v_reg_fa, v_reg_sa, v_reg_sb, v_reg_fb };
 }
 
 // Checks whether a triangle has an obtuse angle 

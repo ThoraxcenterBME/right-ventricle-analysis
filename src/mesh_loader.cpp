@@ -192,25 +192,35 @@ void mark_regions(std::string& in, std::vector<Vertex>& vertices)
         int key; 
         lines >> key; 
 
-        // Inferior Free Wall
-        if (lineType == "ifw") {
-            vertices[key].set_region(Region::IFW); 
+        // Inflow Tract 
+        if (lineType == "it") {
+            vertices[key].set_region(Region::IT); 
             continue; 
         }
-        // Lateral Free Wall
-        if (lineType == "lfw") {
-            vertices[key].set_region(Region::LFW);
+        // Outflow Tract 
+        if (lineType == "ot") {
+            vertices[key].set_region(Region::OT);
             continue; 
         }
-        // Anterior Free Wall
-        if (lineType == "afw") {
-            vertices[key].set_region(Region::AFW);
+        // Free Wall Apex 
+        if (lineType == "fa") {
+            vertices[key].set_region(Region::FA);
             continue; 
         }
-        // Septal Body
-        if (lineType == "sp") {
-            vertices[key].set_region(Region::SP);
+        // Septal Apex 
+        if (lineType == "sa") {
+            vertices[key].set_region(Region::SA);
             continue; 
+        }
+        // Septal Body 
+        if (lineType == "sb") {
+            vertices[key].set_region(Region::SB);
+            continue;
+        }
+        // Free Wall Body 
+        if (lineType == "fb") {
+            vertices[key].set_region(Region::FB);
+            continue;
         }
     }
 }
@@ -224,8 +234,8 @@ Mesh loadMeshRV(std::istream& in) {
     int vertexKey = 0; 
     int triangleIndex = 0; 
     std::string linebuf;
-    double minCoordinate = 10000; 
-    double maxCoordinate = -10000; 
+    double minCoordinate = DBL_MAX; 
+    double maxCoordinate = -DBL_MAX; 
    
     while (std::getline(in, linebuf)) { 
         std::istringstream lines(linebuf);

@@ -14,13 +14,16 @@ DISABLE_WARNINGS_POP()
 
 // Enumerated type for indicating the region the vertex belongs to 
 enum Region {
-	// IFW = Inferior Free Wall
-	// LFW = Laterior Free Wall
-	// AFW = Anterior Free Wall 
-	// SP = Septal body
+	// IT = Inflow Tract
+	// OT = Outflow Tract 
+	// FA = Free Wall Apex
+	// SA = Septal Apex 
+	// SB = Septal Body 
+	// FB = Free Wall Body 
 	// IGN = Ignored 
-	// UD = Initial value, so we haven't classified it 
-	IFW=0, LFW=1, AFW=2, SP=3, IGN=4, UD=5
+	// UD = Initial value, means unclassified. 
+
+	IT=0, OT=1, FA=2, SA=3, SB=4, FB=5, IGN=6, UD=7
 };
 
 struct Vertex {
