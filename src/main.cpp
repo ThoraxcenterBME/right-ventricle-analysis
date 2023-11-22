@@ -26,6 +26,7 @@ DISABLE_WARNINGS_POP()
 bool show_normal_gui = false; 
 bool draw_regions_gui = false; 
 bool number_vertices = false; 
+bool color_regions = false; 
 
 enum class DiffuseMode {
     None,
@@ -73,7 +74,6 @@ struct ProgramState {
 
 TargetCase target; 
 
-
 glm::vec3 computeLighting(const ProgramState& programState, unsigned vertexIndex, const glm::vec3& cameraPos, const Light& light)
 {
     const auto& vertex = programState.myMesh.vertices[vertexIndex];
@@ -107,56 +107,6 @@ glm::vec3 computeLighting(const ProgramState& programState, unsigned vertexIndex
     return result / dist2;
 }
 
-static std::optional<glm::vec3> getWorldPositionOfPixel(const Window& window, const Trackball& trackball, const glm::vec2& pixel);
-
-static size_t getClosestVertexIndex(const Mesh& mesh, const glm::vec3& pos)
-{
-    const auto iter = std::min_element(
-        std::begin(mesh.vertices), std::end(mesh.vertices),
-        [&](const Vertex& lhs, const Vertex& rhs) {
-            return glm::length(lhs.position - pos) < glm::length(rhs.position - pos);
-        });
-    return std::distance(std::begin(mesh.vertices), iter);
-}
-
-void keyboard(unsigned char key, ProgramState& state, const Window& window, const Trackball& camera)
-{
-    switch (key) {
-    case ' ': {
-        const auto worldPoint = getWorldPositionOfPixel(window, camera, window.getCursorPixel());
-        if (worldPoint) {
-            state.selectedVertex = unsigned(getClosestVertexIndex(state.myMesh, *worldPoint));
-        }
-    } break;
-    };
-}
-
-// Get the 3D world position of the mouse cursor (assuming the depth buffer has been filled).
-static std::optional<glm::vec3> getWorldPositionOfPixel(const Window& window, const Trackball& trackball, const glm::vec2& pixel)
-{
-    float depth;
-    glReadPixels(static_cast<int>(pixel.x), static_cast<int>(pixel.y), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-
-    if (depth < 0.0f || depth >= 1.0f) {
-        // This is a work around for a bug in GCC:
-        // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=80635
-        //
-        // This bug will emit a warning about a maybe uninitialized value when writing:
-        // return {};
-        constexpr std::optional<glm::vec3> tmp;
-        return tmp;
-    }
-
-    // Coordinates convert from pixel space to OpenGL screen space (range from -1 to +1)
-    const glm::vec3 win { pixel, depth };
-
-    // View matrix
-    const glm::mat4 view = trackball.viewMatrix();
-    const glm::mat4 projection = trackball.projectionMatrix();
-
-    const glm::vec4 viewport { glm::vec2(0), window.getFrameBufferSize() };
-    return glm::unProject(win, view, projection, viewport);
-}
 
 void draw(const ProgramState& state, const Trackball& camera, std::vector<glm::vec3> vertexColors, std::vector<Vertex>& vertices)
 {
@@ -179,7 +129,11 @@ void draw(const ProgramState& state, const Trackball& camera, std::vector<glm::v
     glEnable(GL_COLOR_MATERIAL);
     glEnable(GL_NORMALIZE);
 
-    drawMeshWithColors(state.myMesh, vertexColors);
+    if (color_regions) {
+        colorRegions(state.myMesh); 
+    } else {
+        drawMeshWithColors(state.myMesh, vertexColors);
+    }
 
     glm::vec3 l_axis = find_long_axis(vertices, 906, 102, 63); 
     glm::vec3 r_axis = find_radial_axis(vertices, l_axis); 
@@ -199,23 +153,6 @@ void draw(const ProgramState& state, const Trackball& camera, std::vector<glm::v
     glVertex3fv(glm::value_ptr(state.lights[static_cast<size_t>(state.selectedLight)].position));
     glEnd();
 
-    // Draw lights as points (squares) in the lights color.
-    glPointSize(10);
-    glBegin(GL_POINTS);
-    for (const auto& light : state.lights) {
-        glColor3fv(glm::value_ptr(light.color));
-        glVertex3fv(glm::value_ptr(light.position));
-    }
-    glEnd();
-
-    // Draw a small red point (square) at the selected vertex.
-    if (state.showSelectedVertex && state.selectedVertex != 0xFFFFFFFF) {
-        glBegin(GL_POINTS);
-        glColor3f(1.0f, 0.0f, 0.0f);
-        glVertex3fv(glm::value_ptr(state.myMesh.vertices[state.selectedVertex].position));
-        glEnd();
-    }
-
     glDepthMask(GL_TRUE); // Disable depth write.
 }
 
@@ -227,7 +164,6 @@ void computeLighting(const ProgramState& state, const glm::vec3& cameraPos, std:
             outVertexColors[v] += computeLighting(state, v, cameraPos, light);
     }
 }
-
 
 void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info, 
     std::vector<Ray>& normals)
@@ -269,13 +205,17 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info,
     ImGui::Separator();
 
     // Show regions
-    ImGui::Checkbox("Color Regions", &draw_regions_gui);
+    ImGui::Checkbox("Mark Regions", &draw_regions_gui);
     if (draw_regions_gui) {
         draw_regions(state.myMesh.vertices);
     }
     ImGui::Spacing();
     ImGui::Separator();
 
+    // Color regions ONLY
+    ImGui::Checkbox("Color Regions", &color_regions);
+    ImGui::Spacing();
+    ImGui::Separator();
 
     // Display Region 1 
     std::string r1_curvature = "Curvature (Inferior Free Wall): " + std::to_string(info.regional_curvs[0]);
@@ -302,21 +242,6 @@ void drawUI(ProgramState& state, const Trackball& camera, RVInfo& info,
     ImGui::Separator();
 
     ImGui::End();
-}
-
-void printHelp()
-{
-    std::cout << "Program Usage:" << std::endl;
-    std::cout << "SPACE - replaces mouse click for selection, will then call your light placement function" << std::endl;
-}
-
-// Change 
-void set_regional(RVInfo& info, std::vector<Vertex>& vertices) {
-    std::vector<double> curvatures = find_regional_curvature(vertices); 
-
-    for (auto& c : curvatures) {
-        info.regional_curvs.push_back(c);
-    }
 }
 
 void write_to_file(std::string filename, PrintInfo info, int i) {
@@ -353,15 +278,6 @@ void write_to_file(std::string filename, PrintInfo info, int i) {
     datafile << "\n"; 
 
     datafile.close(); 
-}
-
-std::string construct_file_string(int n)
-{
-    if (n / 10 < 1) {
-        return target.filename + std::to_string(0) + std::to_string(n) + ".obj";
-    } else {
-        return target.filename + std::to_string(n) + ".obj";
-    }
 }
 
 /*
@@ -413,7 +329,7 @@ void write_strain_to_file(std::string filename, Strain& strain)
      datafile << "\n\nGlobal Longitudinal Strain, Inferior Free Wall Longitudinal Strain, Lateral Free Wall Longitudinal Strain, Anterior Free Wall Longitudinal Strain, Septal Body Longitudinal Strain\n"; 
 
     // Find global and regional longitudinal strain 
-    std::string meshFile = construct_file_string(1); 
+    std::string meshFile = construct_file_string(target, 1); 
     Mesh rv = get_mesh(meshFile); 
 
     strain.longitudinal_strain = longitudinal_strain(strain.vertices_es, strain.vertices_ed, rv.triangles, rv.vertexToTri, strain.long_axis, strain); 
@@ -422,31 +338,6 @@ void write_strain_to_file(std::string filename, Strain& strain)
     for (auto& la : strain.l_strain_values) {
         datafile << la << ", "; 
     }
-    
-    /* datafile << "\n\nGlobal Radial Strain, Inferior Free Wall Radial Strain, Lateral Free Wall Radial Strain, Anterior Free Wall Radial Strain, Septal Body Radial Strain\n"; 
-    strain.radial_axis = ((float)rv.rad_radius) * glm::normalize(find_radial_axis(strain.vertices_ed, strain.long_axis)); // ((float)rv.rad_radius) 
-    // strain.radial_strain = radial_strain(strain.vertices_es, strain.vertices_ed, strain); 
-
-    datafile << strain.radial_strain << ", "; // global radial strain
-    for (auto& la : strain.r_strain_values) {
-        datafile << la << ", ";
-    }
-
-    datafile << "\n\nGlobal Circumferential Strain, Inferior Free Wall Circumferential Strain, Lateral Free Wall Circumferential Strain, Anterior Free Wall Circumferential Strain, Septal Body Circumferential Strain\n"; 
-    strain.circ_axis = -1.0f * ((float)rv.circ_radius) * glm::normalize(find_circumferential_axis(strain.vertices_ed, strain.long_axis, strain.radial_axis)); // ((float)rv.circ_radius) * 
-    strain.circumferential_strain = circumferential_strain(strain.vertices_es, strain.vertices_ed, strain); 
-
-    datafile << strain.circumferential_strain << ", "; // global circumferential strain
-    for (auto& la : strain.c_strain_values) {
-        datafile << la << ", ";
-    }
-          
-    std::cout << "radial axis: " << strain.radial_axis.x << " " << strain.radial_axis.y << " " << strain.radial_axis.z << std::endl;
-    std::cout << "circ axis: " << strain.circ_axis.x << " " << strain.circ_axis.y << " " << strain.circ_axis.z << std::endl;
-    std::cout << "dot product c and r: " << glm::dot(strain.circ_axis, strain.radial_axis) << std::endl;
-    std::cout << "dot product r and l: " << glm::dot(strain.radial_axis, strain.long_axis) << std::endl;
-    std::cout << "dot product c and l: " << glm::dot(strain.circ_axis, strain.long_axis) << std::endl; 
-    */
     
     datafile.close();
 }
@@ -475,7 +366,7 @@ int main_calculations(std::string datafile, std::string strainfile, int frames)
     int c2 = 63;
 
     for (int i = 0; i <= frames; i++) {      
-        fileName = construct_file_string(i); 
+        fileName = construct_file_string(target, i); 
         Mesh rv = get_mesh(fileName); 
 
         // Printing Info for CSV file
@@ -525,7 +416,7 @@ int main_calculations(std::string datafile, std::string strainfile, int frames)
 int main_visual()
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(1000), OpenGLVersion::GL2 };
-    std::string fileName = target.filename + "19.obj";
+    std::string fileName = construct_file_string(target, 19);
 
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt";
@@ -533,7 +424,6 @@ int main_visual()
 
     Trackball trackball { &window, glm::radians(60.0f), 2.0f, 0.387463093f, -0.293215364f };
     trackball.disableTranslation();
-    printHelp();
 
     // Load the mesh file and ring file
     std::ifstream ifile;
@@ -588,11 +478,6 @@ int main_visual()
     std::vector<glm::vec3> vertexColors = heat_color(rv.triangles, rv.vertices, rv.vertexToTri);
     std::vector<Ray> normals = find_normals(state.myMesh.vertices, state.myMesh.triangles);
 
-    // Window Pop-up
-    window.registerCharCallback([&](unsigned unicodeCodePoint) {
-        keyboard(static_cast<unsigned char>(unicodeCodePoint), state, window, trackball);
-    });
-
     while (!window.shouldClose()) {
         window.updateInput();
         glViewport(0, 0, window.getFrameBufferSize().x, window.getFrameBufferSize().y);
@@ -609,64 +494,13 @@ int main_visual()
     return 0; 
 }
 
-// healthy-1: Young healthy volunteer_0 (38)
-// healthy-2: RV beutel young healthy volunteer BPD 7_0 (65)
-// healthy-3: RV beutel young healthy volunteer BPD 15_0 (51)
-// healthy-4: RV beutel young healthy volunteer BPD 16_0 (37)
-// healthy-5: RV beutel young healthy volunteer BPD 31_0 (78)
-// tof-1: ToF RV Beutel_0 (41)
-// tof-2: ToF_2_00 (21)
-// asd-1: Post_ASD_1_00 (34)
 
 // Main function 
 int main(int argc, char** argv)
 {
-    //std::string folderName = "Healthy control "; 
-    //std::string resultsFile = "healthy-analysis/data-"; 
-    //std::string strainFile = "strain-healthy/data-"; 
-
-    //// Healthy
-    //std::vector<int> frameCounts = {
-    //    // 1 
-    //    38, 65, 51, 37, 78,
-    //    // 6 
-    //    61, 25, 19, 26, 23, 25, 33, 25, 36, 32, 33, 36, 34,
-    //    // 19
-    //    28, 19, 21, 28, 39, 44, 18, 24, 33, 43, 33, 18,
-    //    // 31
-    //    44, 19, 17, 21, 50, 20, 30, 18, 38, 17, 27, 24,
-    //    // 43
-    //    31, 15, 30, 35, 47, 21, 19, 36
-    //}; 
-
-    // //// ToF
-    // //std::vector<int> frameCounts = {
-    // //    // 1
-    // //    41, 18, 19, 23, 25, 17, 19, 31, 30, 38, 19,
-    // //    // 12
-    // //    22, 23, 35, 22, 17, 33, 17, 22, 17, 28, 
-    // //    // 22
-    // //    16, 20, 17, 21, 14, 26, 26, 20, 29, 14,
-    // //    // 32 
-    // //    19, 20, 23, 21, 22, 40, 25, 22, 16, 32,
-    // //    // 42
-    // //    14, 25, 21, 35, 17, 20, 24, 39, 17
-    // //}; 
-
-    //for (int i = 1; i <= 50; i++) {
-    //    target.filename = folderName + std::to_string(i) + "/" + folderName + std::to_string(i) + "_0"; 
-    //    target.numFrames = frameCounts[i - 1]; 
-
-    //    auto res = resultsFile + std::to_string(i) + ".csv"; 
-    //    auto strain = strainFile + std::to_string(i) + ".csv"; 
-
-    //    main_calculations(res, strain, target.numFrames);
-    //}
 
      target.filename = "Healthy control 1/Healthy control 1_0";
      target.numFrames = 19; 
-    //
-    //main_calculations("tof-analysis/data-2.csv", "strain-tof/data-2.csv", target.numFrames);
 
     // Either main_calculations or main_visual
     main_visual(); 

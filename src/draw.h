@@ -13,3 +13,4 @@ void drawAxis();
 void draw_regions(std::vector<Vertex>& vertices); 
 void draw_rays(std::vector<Ray>& normals, glm::vec3& color); 
 void drawRay(const Ray& ray, const glm::vec3& color); 
+void colorRegions(const Mesh& mesh);

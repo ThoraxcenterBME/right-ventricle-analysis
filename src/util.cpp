@@ -576,3 +576,20 @@ double find_indexed_curvature(std::vector<Vertex>& vertices)
     return std::accumulate(curvatures.begin(), curvatures.end(), 0.0) / static_cast<double>(curvatures.size());
 }
 
+void set_regional(RVInfo& info, std::vector<Vertex>& vertices)
+{
+    std::vector<double> curvatures = find_regional_curvature(vertices);
+
+    for (auto& c : curvatures) {
+        info.regional_curvs.push_back(c);
+    }
+}
+
+std::string construct_file_string(TargetCase& target, int n)
+{
+    if (n / 10 < 1) {
+        return target.filename + std::to_string(0) + std::to_string(n) + ".obj";
+    } else {
+        return target.filename + std::to_string(n) + ".obj";
+    }
+}

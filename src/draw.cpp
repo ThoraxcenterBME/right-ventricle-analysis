@@ -121,6 +121,23 @@ void drawRay(const Ray& ray, const glm::vec3& color)
     glPopAttrib();
 }
 
+void colorRegions(const Mesh& mesh)
+{
+    ColorRegion region_colors = ColorRegion(); 
+    glBegin(GL_TRIANGLES);
+    for (const auto& triangle : mesh.triangles) {
+        for (int v = 0; v < 3; v++) {
+            const auto& vertex = mesh.vertices[triangle[v]];
+            auto color = region_colors.colors[vertex.region]; 
+
+            glColor3fv(glm::value_ptr(color));
+            glNormal3fv(glm::value_ptr(vertex.normal));
+            glVertex3fv(glm::value_ptr(vertex.position));
+        }
+    }
+    glEnd();
+}
+
 
 void draw_rays(std::vector<Ray>& normals, glm::vec3& color)
 {

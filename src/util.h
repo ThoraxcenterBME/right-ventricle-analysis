@@ -57,4 +57,6 @@ std::vector<double> regional_volumes(std::vector<Vertex>& vs, std::vector<glm::u
 std::vector<double> regional_surface_areas(std::vector<Vertex>& vs, std::vector<glm::uvec3>& ts, std::map<int, std::vector<int>>& vertexToTri); 
 double find_indexed_curvature(std::vector<Vertex>& vertices);
 std::pair<double, double> find_min_max(std::vector<Vertex>& vertices); 
-glm::vec3 find_center(std::vector<Vertex>& vertices); 
+glm::vec3 find_center(std::vector<Vertex>& vertices);
+void set_regional(RVInfo& info, std::vector<Vertex>& vertices);
+std::string construct_file_string(TargetCase& target, int n);

@@ -274,6 +274,7 @@ Mesh loadMeshRV(std::istream& in) {
     rv.vertices = vertices; 
     rv.vertexToTri = vertexMap; 
 
+    // Do this for debugging RV meshes
     if (rv.vertices.size() > 937) {
         rv.circ_radius = glm::distance(vertices[281].position, vertices[695].position); // largestDist(rv.vertices) / 2.0;
         rv.rad_radius = glm::distance(vertices[806].position, vertices[596].position); 

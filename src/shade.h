@@ -11,7 +11,7 @@ DISABLE_WARNINGS_POP()
 
 using Color = glm::vec3;
 
-// !!! DO NOT MODIFY THIS STRUCT !!!
+
 struct MaterialInformation {
     Color Kd { 0.5f, 0.5f, 0.5f }; // Diffuse coefficient per vertex.
     Color Ks { 0.5f, 0.5f, 0.5f }; // Specularity coefficient per vertex.
@@ -28,34 +28,15 @@ struct Positions {
 
 Color debugColor(const MaterialInformation& materialInformation, const Positions& positions, const glm::vec3& normal, const Color& lightColor)
 {
-    // This function you can use in any way you like!
-    // E.g., for debugging purposes!
     return (normal + 1.0f) / 2.0f;
-
-    // or random color per vertex:
-    // const uint32_t hashX = std::hash<float>()(positions.vertex.x);
-    // const uint32_t hashY = std::hash<float>()(positions.vertex.y);
-    // const uint32_t hashZ = std::hash<float>()(positions.vertex.z);
-    // return Color {
-    //     (double)hashX / std::numeric_limits<uint32_t>::max(),
-    //     (double)hashY / std::numeric_limits<uint32_t>::max(),
-    //     (double)hashZ / std::numeric_limits<uint32_t>::max()
-    // };
-
-    // or material information:
-    // return materialInformation.Kd;
 }
 
-// Utility function for calculating a reflection vector
-// The incident vector points _towards_ the light point
-// The normal vector _must_ be normalized
 glm::vec3 calculateReflection(const glm::vec3& incident, const glm::vec3& normal)
 {
     glm::vec3 reflect = -1.0f * incident + 2.0f * glm::dot(incident, normal) * normal;
 
     return reflect;
 }
-
 
 // Standard lambertian shading: Kd * dot(N,L), clamped to zero when negative. Where L is the light vector.
 glm::vec3 diffuseOnly(const MaterialInformation& shadingData, const Positions& positions, const glm::vec3& normal, const glm::vec3& lightColor)
@@ -70,10 +51,6 @@ glm::vec3 diffuseOnly(const MaterialInformation& shadingData, const Positions& p
     return glm::vec3(x_diffuse, y_diffuse, z_diffuse);
 }
 
-// Phong (!) Shading Specularity (http://en.wikipedia.org/wiki/Blinn%E2%80%93Phong_shading_model)
-// Follow the course, only calculate Ks pow(dot(V,R),shininess), where V is the view vector and R is the Reflection vector of the light (like in pool billard computed from the LightPos, vertexPos and normal).
-// When computing specularities like this, verify that the light is on the right side of the surface, with respect to the normal
-// E.g., for a plane, the light source below the plane cannot cast light on the top, hence, there can also not be any specularity.
 glm::vec3 phongSpecularOnly(const MaterialInformation& shadingData, const glm::vec3& vertexPos, const glm::vec3& normal, const glm::vec3& lightPos, const glm::vec3& cameraPos)
 {
     // Check if light source is above the vertex. Use cosine and normalized.
@@ -98,10 +75,6 @@ glm::vec3 phongSpecularOnly(const MaterialInformation& shadingData, const glm::v
     return glm::vec3(x_spec, y_spec, z_spec);
 }
 
-// Blinn-Phong Shading Specularity (http://en.wikipedia.org/wiki/Blinn%E2%80%93Phong_shading_model)
-// Be careful!!! The pseudo code does some additional modifications to the formula seen in the course.
-// Follow the course version and calculate ONLY Ks * pow(dot(N,H), shininess). The definition of H is given on the page above and in the course.
-// The same test as before should be used.
 glm::vec3 blinnPhongSpecularOnly(const MaterialInformation& shadingData, const glm::vec3& vertexPos, const glm::vec3& normal, const glm::vec3& lightPos, const glm::vec3& cameraPos)
 {
     // Check if light source is above the vertex. Use cosine and normalized.
