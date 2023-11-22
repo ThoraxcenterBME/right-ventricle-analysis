@@ -1,13 +1,13 @@
-# Code for RV Data 
+# Right Ventricle Analysis 
 
-![](imgs/rv-fig1.png)
+![](imgs/labeled-regions.png)
 
+This repository contains code to extract curvature, volume, area, and directional strain from 3D mesh data obtained with echocardiography. 
 
-Output data of data can be found in the directory `output-data`
+GUI is built using OpenGL and one can analyse one mesh at a time using the GUI. Batch analysis for multiple cycles is possible using the calculation functionalities of the repository. This works with 3D mesh data created with TomTec. 
 
-<!-- Notes: 
-- Version name is in in the title of the `*.txt` file. It is simply the data. 
-    If there are multiple versions per day. It will be `beutel-data-[data]-[n].txt`
-- Timestamps -> Not sure how they can be incorporated. Header file and number of beutels don't match. 
-- Which warnings/successes?
-- Indexed curvature can be parameterised to use different methods.  -->
+### Curvature comparison
+![](imgs/end-diastole.png)
+
+### GUI for analysis 
+![](imgs/GUI_new.png)
