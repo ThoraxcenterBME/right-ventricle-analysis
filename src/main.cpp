@@ -416,7 +416,7 @@ int main_calculations(std::string datafile, std::string strainfile, int frames)
 int main_visual()
 {
     Window window { "RV Beutel Visualisation", glm::ivec2(1000), OpenGLVersion::GL2 };
-    std::string fileName = construct_file_string(target, 19);
+    std::string fileName = construct_file_string(target, 0);
 
     std::string ring = "ring-indices.txt"; // ring-indices, ring-sphere ring-large
     std::string exclude_vertices = "exclude.txt";
@@ -499,8 +499,8 @@ int main_visual()
 int main(int argc, char** argv)
 {
 
-     target.filename = "Healthy control 1/Healthy control 1_0";
-     target.numFrames = 19; 
+     target.filename = "ToF 6/ToF 6_0";
+     target.numFrames = 2; 
 
     // Either main_calculations or main_visual
     main_visual(); 

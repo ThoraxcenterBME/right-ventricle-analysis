@@ -456,10 +456,13 @@ glm::vec3 heat_color_calculation(const Vertex& vertex,
         c = glm::vec3(0.0, scaledCurvature, 1.0f);
     } else if (scaledCurvature < 0.50) {
         scaledCurvature = (scaledCurvature - 0.25f) * 4.0f;
-        c = glm::vec3(0.0f, 1.0f, 1.0f - scaledCurvature);
-    } else if (scaledCurvature < 0.68) {
+        c = glm::vec3(0.025f, 1.0f, 1.0f - scaledCurvature);
+    } else if (scaledCurvature < 0.65) {
         scaledCurvature = (scaledCurvature - 0.5f) * 4.0f;
-        c = glm::vec3(scaledCurvature, 1.0f, 0.0f);
+        c = glm::vec3(scaledCurvature, 0.8f, 0.2f);
+    } else if (scaledCurvature < 0.8) {
+        scaledCurvature = (scaledCurvature - 0.80f) * 3.0f;
+        c = glm::vec3(1.0f, 1.0f, 0.0f);
     } else {
         scaledCurvature = (scaledCurvature - 0.75f) * 4.0f;
         c = glm::vec3(1.0f, 1.0f - scaledCurvature, 0.0f);
