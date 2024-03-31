@@ -1,0 +1,8 @@
+.vs/
+Beutels/
+out/
+.idea/
+*.class
+segment-rv/target
+data/*
+framework/*
