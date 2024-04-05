@@ -394,7 +394,11 @@ int main_calculations(std::string datafile, std::string strainfile, int frames)
             strain.es_areas = std::vector<double>(print_info.surface_areas.begin(), print_info.surface_areas.end()); 
             strain.vertices_es = std::vector<Vertex>(rv.vertices.begin(), rv.vertices.end()); 
             es = i; 
-        } else if (print_info.volume > max_vol) { // end diastole, max. volume
+        } 
+          //else stripped by gerard ed will never bi 0 in this case 
+            
+            
+        if (print_info.volume > max_vol) { // end diastole, max. volume
             strain.global_ed_area = print_info.surface_area; 
             max_vol = print_info.volume; 
             strain.ed_areas = std::vector<double>(print_info.surface_areas.begin(), print_info.surface_areas.end()); 
@@ -426,8 +430,12 @@ int main_visual()
     trackball.disableTranslation();
 
     // Load the mesh file and ring file
+  
     std::ifstream ifile;
+
     ifile.open(std::filesystem::path(DATA_DIR) / fileName);
+
+  
     Mesh rv = loadMeshRV(ifile);
     loadRingFromFile(ring, rv.vertices);
 
@@ -501,6 +509,20 @@ int main(int argc, char** argv)
 
      target.filename = "ToF 6/ToF 6_0";
      target.numFrames = 2; 
+
+     char InputDatapath[_MAX_PATH];
+     char* BeutelFileName;
+     char szfilter[200];
+     std::string resultsFile = "EsEd_analysis"; // Healthy-analysisV2 created directory before run analysis
+     strcpy(szfilter, "Obj Files\0*.obj\0All Files\0*.*\0");
+     BeutelFileName = getOpenFileName(szfilter, InputDatapath);
+     std::string myString = BeutelFileName;
+     target.filename = myString.substr(0, myString.length() - 6);
+     target.numFrames = GetNrOfFiles(target.filename)-1;
+
+
+
+
 
     // Either main_calculations or main_visual
     main_visual(); 

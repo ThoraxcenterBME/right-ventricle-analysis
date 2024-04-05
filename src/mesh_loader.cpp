@@ -5,6 +5,7 @@
 #include <map>
 #include <sstream>
 #include <glm/gtx/normal.hpp>
+#include <numeric>
 
 void setVertexPosition(Vertex& v, float x, float y, float z) {
     glm::vec3 pos = glm::vec3(x, y, z); 
@@ -287,3 +288,57 @@ Mesh loadMeshRV(std::istream& in) {
     return rv; 
 }
 
+#include "shlobj_core.h"
+
+OPENFILENAME ofn;
+#define RESERVED NULL;
+char szFile[_MAX_DIR];
+char szSaveFile[_MAX_DIR];
+
+char* getOpenFileName(char* szfilter, char* DataPath)
+{
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = NULL;
+    // strcpy(szFile, inputDatapath.c_str());
+    // ofn.lpstrFile = (LPSTR) inputDatapath.c_str();
+    ofn.lpstrFile = szFile;
+    // ofn.lpstrFile[lstrlen(inputDatapath.c_str())] = '\0';
+    ofn.lpstrFile[0] = '\0';
+    ofn.nMaxFile = sizeof(szFile);
+    ofn.lpstrFilter = "obj\0*.obj*\0All\0*.*\0";
+    ofn.nFilterIndex = 1;
+    ofn.lpstrFileTitle = NULL;
+    ofn.nMaxFileTitle = 0;
+    ofn.lpstrInitialDir = NULL;
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+    GetOpenFileName(&ofn);
+    return ofn.lpstrFile;
+    // Now simpley display the file name
+
+    // Now simpley display the file name
+    // MessageBox(NULL, ofn.lpstrFile, "File Name", MB_OK);
+}
+
+int GetNrOfFiles(std::string fileName)
+{
+    char newFilename[512];
+    std::string objfileName;
+    short NrOfObjFiles = 0;
+    for (int i = 0; i < 100; i++) {
+        if (i < 10)
+            objfileName = fileName + std::to_string(0) + std::to_string(i) + ".obj";
+        else
+            objfileName = fileName + std::to_string(i) + ".obj";
+
+        std::ifstream ifile;
+        ifile.open(objfileName.c_str());
+
+        if (ifile.is_open()) {
+            NrOfObjFiles++;
+            ifile.close();
+        } else
+            break;
+    }
+    return NrOfObjFiles;
+}
