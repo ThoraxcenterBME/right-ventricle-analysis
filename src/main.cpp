@@ -507,23 +507,48 @@ int main_visual()
 int main(int argc, char** argv)
 {
 
-     target.filename = "ToF 6/ToF 6_0";
-     target.numFrames = 2; 
+    target.filename = "ToF 6/ToF 6_0";
+    target.numFrames = 2; 
 
-     char InputDatapath[_MAX_PATH];
-     char* BeutelFileName;
-     char szfilter[200];
-     std::string resultsFile = "EsEd_analysis"; // Healthy-analysisV2 created directory before run analysis
-     strcpy(szfilter, "Obj Files\0*.obj\0All Files\0*.*\0");
-     BeutelFileName = getOpenFileName(szfilter, InputDatapath);
-     std::string myString = BeutelFileName;
-     target.filename = myString.substr(0, myString.length() - 6);
-     target.numFrames = GetNrOfFiles(target.filename)-1;
+    std::cout << "Press 'q' to exit." << std::endl;
+    std::cout << "Press 'l'+ 'enter' Load data" << std::endl;
+
+    char inputchar;
+    switch (inputchar) {
+
+        while ((inputchar = getchar()) != 'q') {
+            std::cout << "Press 'q' to exit." << std::endl;
+            std::cout << "Press 'l'+ 'enter' Load data" << std::endl;
+        case 'l':
+            {
+            char InputDatapath[_MAX_PATH];
+            char* BeutelFileName;
+            char szfilter[200];
+            std::string resultsFile = "EsEd_analysis"; // Healthy-analysisV2 created directory before run analysis
+            strcpy(szfilter, "Obj Files\0*.obj\0All Files\0*.*\0");
+            BeutelFileName = getOpenFileName(szfilter, InputDatapath);
+            std::string myString = BeutelFileName;
+            target.filename = myString.substr(0, myString.length() - 6);
+            target.numFrames = GetNrOfFiles(target.filename) - 1;
+
+            // Either main_calculations or main_visual
+            main_visual(); 
+
+            }
+            break;
+    
+        case 'q':
+            return 0;
+            break;
+        }
+    }
+
+
+
+   
 
 
 
 
 
-    // Either main_calculations or main_visual
-    main_visual(); 
 }
