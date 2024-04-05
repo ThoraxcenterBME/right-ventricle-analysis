@@ -5,3 +5,4 @@ out/
 *.class
 segment-rv/target
 data/*
+CMakeSettings.json
