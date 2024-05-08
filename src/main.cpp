@@ -514,11 +514,11 @@ int main(int argc, char** argv)
     std::cout << "Press 'l'+ 'enter' Load data" << std::endl;
 
     char inputchar;
-    switch (inputchar) {
 
-        while ((inputchar = getchar()) != 'q') {
+    while ((inputchar = getchar()) != 'q') {
             std::cout << "Press 'q' to exit." << std::endl;
             std::cout << "Press 'l'+ 'enter' Load data" << std::endl;
+      switch (inputchar) {
         case 'l':
             {
             char InputDatapath[_MAX_PATH];
